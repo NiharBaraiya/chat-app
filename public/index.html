@@ -1,21 +1,22 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
   <title>Local Chat</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="chat-container">
-    <h2>Local Chat (Simple)</h2>
-    <div id="start">
-      <input type="text" id="username" placeholder="Enter your name" />
-      <button onclick="startChat()">Start Chat</button>
-    </div>
+  <div id="chat-container">
+    <h2>💬 Local Chat</h2>
+    <form id="name-form">
+      <input type="text" id="name" placeholder="Enter your name" required />
+      <button type="submit">Join Chat</button>
+    </form>
     <ul id="messages" style="display:none;"></ul>
     <div id="typing"></div>
     <form id="chatForm" style="display:none;">
-      <input id="msg" type="text" placeholder="Type a message" required />
-      <button type="submit">Send</button>
+      <input id="msg" type="text" placeholder="Type a message..." required />
+      <button>Send</button>
     </form>
   </div>
   <script src="/socket.io/socket.io.js"></script>
