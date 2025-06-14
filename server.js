@@ -10,7 +10,6 @@ app.use(express.static("public"));
 
 // ✅ Track users and room-wise user lists
 const users = {};
-const roomUsers = {};
 
 function updateRoomUsers(room) {
   const userList = Object.values(users)
@@ -27,42 +26,57 @@ io.on("connection", (socket) => {
     socket.join(room);
     users[socket.id] = { name, room };
 
-    if (!roomUsers[room]) roomUsers[room] = [];
-    roomUsers[room].push(name);
-
     updateRoomUsers(room);
 
-    // Optional welcome system message
-    socket.to(room).emit("chat message", `[System] ${name} joined the room.`);
+    // Welcome message to others in room
+    socket.to(room).emit("message", {
+      user: "System",
+      text: `${name} joined the chat.`,
+      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    });
   });
 
-  // ✅ Typing indicator
-  socket.on("typing", (msg) => {
-    socket.broadcast.emit("typing", msg); // Send to others
+  // ✅ Typing indicator (sent only to others in the same room)
+  socket.on("typing", (isTyping) => {
+    const user = users[socket.id];
+    if (user) {
+      socket.to(user.room).emit("typing", isTyping ? `${user.name} is typing...` : "");
+    }
   });
 
-  // ✅ Chat messages with timestamp
-  socket.on("chat message", (msg) => {
-    const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    io.emit("chat message", `[${time}] ${msg}`);
+  // ✅ Handle chat message
+  socket.on("chatMessage", (text) => {
+    const user = users[socket.id];
+    if (user) {
+      const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+      io.to(user.room).emit("message", {
+        user: user.name,
+        text,
+        time,
+      });
+    }
   });
 
   // ✅ Handle disconnect
   socket.on("disconnect", () => {
     const user = users[socket.id];
     if (user) {
-      roomUsers[user.room] = roomUsers[user.room]?.filter((n) => n !== user.name);
-      updateRoomUsers(user.room);
+      socket.to(user.room).emit("message", {
+        user: "System",
+        text: `${user.name} left the chat.`,
+        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      });
 
-      socket.to(user.room).emit("chat message", `[System] ${user.name} left the room.`);
       delete users[socket.id];
+      updateRoomUsers(user.room);
     }
 
     console.log("User disconnected");
   });
 });
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+  console.log(`✅ Server running at http://localhost:${PORT}`);
 });
