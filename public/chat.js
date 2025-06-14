@@ -4,38 +4,21 @@ const urlParams = new URLSearchParams(window.location.search);
 let name = urlParams.get("name");
 let room = urlParams.get("room");
 
-const joinContainer = document.getElementById("join-container");
-const chatContainer = document.getElementById("chat-container");
 const roomNameElem = document.getElementById("room-name");
 const form = document.getElementById("chatForm");
 const input = document.getElementById("msg");
 const messages = document.getElementById("messages");
 const typing = document.getElementById("typing");
 
-function joinChat(username, chatroom) {
-  name = username;
-  room = chatroom;
+// Join room
+function joinChat(name, room) {
   socket.emit("joinRoom", { name, room });
-  roomNameElem.innerText = `💬 ${room} Room`;
-  joinContainer.style.display = "none";
-  chatContainer.style.display = "block";
+  roomNameElem.innerText = `${room} Room`;
 }
 
-// Show form if no name/room
-if (!name || !room) {
-  document.getElementById("join-form").addEventListener("submit", (e) => {
-    e.preventDefault();
-    const inputName = document.getElementById("name").value.trim();
-    const inputRoom = document.getElementById("room").value.trim();
-    if (inputName && inputRoom) {
-      joinChat(inputName, inputRoom);
-    }
-  });
-} else {
-  joinChat(name, room);
-}
+joinChat(name, room);
 
-// Handle form submit
+// Send message
 form.addEventListener("submit", function (e) {
   e.preventDefault();
   const message = input.value.trim();
@@ -46,9 +29,14 @@ form.addEventListener("submit", function (e) {
   }
 });
 
-// Display messages
+// Receive message
 socket.on("message", (message) => {
-  const className = message.user === name ? "you" : message.user === "System" ? "system" : "other";
+  const className = message.user === name
+    ? "you"
+    : message.user === "System"
+    ? "system"
+    : "other";
+
   const html = `
     <li class="${className}">
       [${message.time}] <strong>${message.user}</strong>: ${message.text}
