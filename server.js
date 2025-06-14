@@ -1,89 +1,93 @@
 const express = require("express");
 const http = require("http");
-const socketIo = require("socket.io");
+const path = require("path");
+const socketio = require("socket.io");
+const cors = require("cors");
+const moment = require("moment"); // ✅ Import moment for timestamps
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server);
-const formatMessage = (user, text) => {
-  return {
-    user,
-    text,
-    time: new Date().toISOString()
-  };
-};
 
-app.use(express.static("public"));
+// CORS configuration
+app.use(cors({
+  origin: "https://chat-app-dw0g.onrender.com",
+  methods: ["GET", "POST"],
+  credentials: true
+}));
 
-// ✅ Track users and room-wise user lists
+const io = socketio(server, {
+  cors: {
+    origin: "https://chat-app-dw0g.onrender.com",
+    methods: ["GET", "POST"]
+  }
+});
+
+// Serve static files
+app.use(express.static(path.join(__dirname, "public")));
+
 const users = {};
 
-function updateRoomUsers(room) {
-  const userList = Object.values(users)
-    .filter((u) => u.room === room)
-    .map((u) => u.name);
-  io.to(room).emit("roomUsers", userList);
-}
-
 io.on("connection", (socket) => {
-  console.log("User connected");
-
-  // ✅ When user joins a room
+  // ✅ Join room
   socket.on("joinRoom", ({ name, room }) => {
     socket.join(room);
     users[socket.id] = { name, room };
 
-    updateRoomUsers(room);
-
-    // Welcome message to others in room
+    // ✅ Notify others
     socket.to(room).emit("message", {
-      user: "System",
-      text: `${name} joined the chat.`,
-      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      user: "system",
+      text: ${name} joined the chat,
+      time: moment().format("h:mm A")
     });
   });
 
-  // ✅ Typing indicator (sent only to others in the same room)
-  socket.on("typing", (isTyping) => {
+  // ✅ On chat message
+  socket.on("chatMessage", (msg) => {
     const user = users[socket.id];
     if (user) {
-      socket.to(user.room).emit("typing", isTyping ? `${user.name} is typing...` : "");
+      io.to(user.room).emit("message", {
+        user: user.name,
+        text: msg,
+        time: moment().format("h:mm A")
+      });
     }
   });
 
-  // ✅ Handle chat message
-  socket.on("chatMessage", (text) => {
+  // ✅ Typing notification
+  socket.on("typing", (isTyping) => {
     const user = users[socket.id];
     if (user) {
-      const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      socket.to(user.room).emit("typing", isTyping ? ${user.name} is typing... : null);
+    }
+  });
 
+  // ✅ Alternative sendMessage event (optional)
+  socket.on("sendMessage", (message, callback) => {
+    const user = users[socket.id];
+    if (user) {
       io.to(user.room).emit("message", {
         user: user.name,
-        text,
-        time,
+        text: message,
+        time: moment().format("h:mm A")
       });
     }
+    callback();
   });
 
   // ✅ Handle disconnect
   socket.on("disconnect", () => {
     const user = users[socket.id];
     if (user) {
-      socket.to(user.room).emit("message", {
-        user: "System",
-        text: `${user.name} left the chat.`,
-        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      io.to(user.room).emit("message", {
+        user: "system",
+        text: ${user.name} left the chat,
+        time: moment().format("h:mm A")
       });
-
       delete users[socket.id];
-      updateRoomUsers(user.room);
     }
-
-    console.log("User disconnected");
   });
 });
 
+// ✅ Server listen
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`✅ Server running at http://localhost:${PORT}`);
-});
+server.listen(PORT, () => console.log(Server running on port ${PORT}));
