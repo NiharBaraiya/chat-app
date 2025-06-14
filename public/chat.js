@@ -1,18 +1,41 @@
 const socket = io("https://chat-app-dw0g.onrender.com");
 
 const urlParams = new URLSearchParams(window.location.search);
-const name = urlParams.get("name") || "Guest";
-const room = urlParams.get("room") || "General";
+let name = urlParams.get("name");
+let room = urlParams.get("room");
 
-document.getElementById("room-name").innerText = `💬 ${room} Room`;
-
-socket.emit("joinRoom", { name, room });
-
+const joinContainer = document.getElementById("join-container");
+const chatContainer = document.getElementById("chat-container");
+const roomNameElem = document.getElementById("room-name");
 const form = document.getElementById("chatForm");
 const input = document.getElementById("msg");
 const messages = document.getElementById("messages");
 const typing = document.getElementById("typing");
 
+function joinChat(username, chatroom) {
+  name = username;
+  room = chatroom;
+  socket.emit("joinRoom", { name, room });
+  roomNameElem.innerText = `💬 ${room} Room`;
+  joinContainer.style.display = "none";
+  chatContainer.style.display = "block";
+}
+
+// Show form if no name/room
+if (!name || !room) {
+  document.getElementById("join-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const inputName = document.getElementById("name").value.trim();
+    const inputRoom = document.getElementById("room").value.trim();
+    if (inputName && inputRoom) {
+      joinChat(inputName, inputRoom);
+    }
+  });
+} else {
+  joinChat(name, room);
+}
+
+// Handle form submit
 form.addEventListener("submit", function (e) {
   e.preventDefault();
   const message = input.value.trim();
@@ -23,6 +46,7 @@ form.addEventListener("submit", function (e) {
   }
 });
 
+// Display messages
 socket.on("message", (message) => {
   const className = message.user === name ? "you" : message.user === "System" ? "system" : "other";
   const html = `
@@ -34,6 +58,7 @@ socket.on("message", (message) => {
   messages.scrollTop = messages.scrollHeight;
 });
 
+// Typing indicator
 let typingTimeout;
 input.addEventListener("input", () => {
   socket.emit("typing", true);
