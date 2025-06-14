@@ -31,22 +31,30 @@ form.addEventListener("submit", function (e) {
 });
 
 // Receive message from server
+// Format time to [HH:MM AM/PM]
+function formatTime(dateStr) {
+  const date = new Date(dateStr);
+  return `[${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}]`;
+}
+
 socket.on("message", (message) => {
-  const className =
-    message.user === "System"
-      ? "message system"
-      : message.user === name
-      ? "message you"
-      : "message";
+  const messagesContainer = document.getElementById("messages");
+  let className = "";
+
+  if (message.user === "System") {
+    className = "system";
+  } else if (message.user === name) {
+    className = "you";
+  }
 
   const html = `
     <li class="${className}">
-      <strong>${message.user}</strong>: ${message.text}
-      <br/><small>${message.time || ""}</small>
+      ${formatTime(message.time)} ${message.user}: ${message.text}
     </li>
   `;
-  messages.innerHTML += html;
-  messages.scrollTop = messages.scrollHeight;
+
+  messagesContainer.innerHTML += html;
+  messagesContainer.scrollTop = messagesContainer.scrollHeight;
 });
 
 // Update user list in sidebar
