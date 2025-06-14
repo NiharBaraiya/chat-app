@@ -3,17 +3,20 @@ const http = require("http");
 const path = require("path");
 const socketio = require("socket.io");
 const cors = require("cors");
-const moment = require("moment-timezone"); // ✅ use moment-timezone
+const moment = require("moment-timezone");
 
 const app = express();
 const server = http.createServer(app);
 
-// CORS configuration
+// ✅ Enable CORS for deployed domain
 app.use(cors({
-  origin: "https://chat-app-dw0g.onrender.com",
+  origin: "https://chat-app-dw0g.onrender.com", // Update to match your deployed frontend
   methods: ["GET", "POST"],
   credentials: true
 }));
+
+// ✅ Serve static files from "public" folder
+app.use(express.static(path.join(__dirname, "public")));
 
 const io = socketio(server, {
   cors: {
@@ -22,32 +25,29 @@ const io = socketio(server, {
   }
 });
 
-// Serve static files
-app.use(express.static(path.join(__dirname, "public")));
+// ✅ In-memory store of users
+const users = {}; // socket.id -> { name, room }
 
-const users = {}; // Store users by socket.id
-
-// ✅ Helper to get user by socket id
-function getCurrentUser(id) {
-  return users[id];
-}
-
-// ✅ Helper for current IST time
+// ✅ Get Indian time
 function getIndianTime() {
   return moment().tz("Asia/Kolkata").format("h:mm A");
 }
 
-// ✅ Socket.IO logic
-io.on("connection", socket => {
+// ✅ Get current user by socket ID
+function getCurrentUser(id) {
+  return users[id];
+}
 
-  // When user joins a room
+// ✅ Socket.io handling
+io.on("connection", socket => {
+  console.log(`🔌 New connection: ${socket.id}`);
+
+  // ✅ Join room event
   socket.on("joinRoom", ({ name, room }) => {
     socket.join(room);
-
-    // Save user
     users[socket.id] = { name, room };
 
-    // Welcome to the user
+    // Welcome the user
     socket.emit("message", {
       user: "System",
       text: `Welcome ${name} to the chat`,
@@ -62,7 +62,7 @@ io.on("connection", socket => {
     });
   });
 
-  // When user sends a chat message
+  // ✅ Receive chat message
   socket.on("chatMessage", (msg) => {
     const user = getCurrentUser(socket.id);
     if (user) {
@@ -74,7 +74,7 @@ io.on("connection", socket => {
     }
   });
 
-  // Typing indicator
+  // ✅ Typing indicator
   socket.on("typing", (isTyping) => {
     const user = getCurrentUser(socket.id);
     if (user) {
@@ -82,7 +82,7 @@ io.on("connection", socket => {
     }
   });
 
-  // Optional: Alternative message event
+  // ✅ Optional alternative sendMessage
   socket.on("sendMessage", (message, callback) => {
     const user = getCurrentUser(socket.id);
     if (user) {
@@ -95,7 +95,7 @@ io.on("connection", socket => {
     if (callback) callback();
   });
 
-  // User disconnect
+  // ✅ On disconnect
   socket.on("disconnect", () => {
     const user = getCurrentUser(socket.id);
     if (user) {
@@ -109,6 +109,8 @@ io.on("connection", socket => {
   });
 });
 
-// Start the server
+// ✅ Start server
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+server.listen(PORT, () => {
+  console.log(`✅ Server running on port ${PORT}`);
+});
