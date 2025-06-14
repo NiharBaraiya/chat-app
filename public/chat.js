@@ -1,4 +1,5 @@
 const socket = io();
+
 const urlParams = new URLSearchParams(window.location.search);
 let name = urlParams.get("name");
 let room = urlParams.get("room");
@@ -9,14 +10,15 @@ const input = document.getElementById("msg");
 const messages = document.getElementById("messages");
 const typing = document.getElementById("typing");
 
-if (room) {
-  roomNameElem.style.display = "block";
-  roomNameElem.innerText = `${room} Room`;
+// If room chat
+if (name && room) {
   socket.emit("joinRoom", { name, room });
-} else {
-  socket.emit("joinRoom", { name, room: "general" });
+  if (roomNameElem) {
+    roomNameElem.innerText = `${room} Room`;
+  }
 }
 
+// Send message
 form.addEventListener("submit", function (e) {
   e.preventDefault();
   const message = input.value.trim();
@@ -27,11 +29,14 @@ form.addEventListener("submit", function (e) {
   }
 });
 
+// Receive message
 socket.on("message", (message) => {
-  const className = message.user === name
-    ? "you"
-    : message.user === "System"
-    ? "system"
+  const className = name
+    ? message.user === name
+      ? "you"
+      : message.user === "System"
+      ? "system"
+      : "other"
     : "other";
 
   const html = `
@@ -43,6 +48,7 @@ socket.on("message", (message) => {
   messages.scrollTop = messages.scrollHeight;
 });
 
+// Typing
 let typingTimeout;
 input.addEventListener("input", () => {
   socket.emit("typing", true);
