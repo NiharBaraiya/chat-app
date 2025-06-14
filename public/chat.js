@@ -51,6 +51,16 @@ socket.on("message", (message) => {
   messagesContainer.scrollTop = messagesContainer.scrollHeight;
 });
 
+socket.on("roomUsers", (users) => {
+  const userList = document.getElementById("userList");
+  userList.innerHTML = "";
+
+  users.forEach((user) => {
+    const li = document.createElement("li");
+    li.textContent = user;
+    userList.appendChild(li);
+  });
+});
 
 
 // Typing indicator
