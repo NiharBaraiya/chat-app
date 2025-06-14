@@ -3,7 +3,7 @@ const http = require("http");
 const path = require("path");
 const socketio = require("socket.io");
 const cors = require("cors");
-const moment = require("moment"); // ✅ For formatted timestamps
+const moment = require("moment-timezone"); // ✅ use moment-timezone
 
 const app = express();
 const server = http.createServer(app);
@@ -32,6 +32,11 @@ function getCurrentUser(id) {
   return users[id];
 }
 
+// ✅ Helper for current IST time
+function getIndianTime() {
+  return moment().tz("Asia/Kolkata").format("h:mm A");
+}
+
 // ✅ Socket.IO logic
 io.on("connection", socket => {
 
@@ -46,14 +51,14 @@ io.on("connection", socket => {
     socket.emit("message", {
       user: "System",
       text: `Welcome ${name} to the chat`,
-      time: moment().format("h:mm A")
+      time: getIndianTime()
     });
 
     // Notify others
     socket.broadcast.to(room).emit("message", {
       user: "System",
       text: `${name} joined the chat`,
-      time: moment().format("h:mm A")
+      time: getIndianTime()
     });
   });
 
@@ -64,7 +69,7 @@ io.on("connection", socket => {
       io.to(user.room).emit("message", {
         user: user.name,
         text: msg,
-        time: moment().format("h:mm A")
+        time: getIndianTime()
       });
     }
   });
@@ -84,7 +89,7 @@ io.on("connection", socket => {
       io.to(user.room).emit("message", {
         user: user.name,
         text: message,
-        time: moment().format("h:mm A")
+        time: getIndianTime()
       });
     }
     if (callback) callback();
@@ -97,7 +102,7 @@ io.on("connection", socket => {
       io.to(user.room).emit("message", {
         user: "System",
         text: `${user.name} left the chat`,
-        time: moment().format("h:mm A")
+        time: getIndianTime()
       });
       delete users[socket.id];
     }
