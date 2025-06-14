@@ -1,60 +1,42 @@
-<!-- public/chat.html -->
+<!-- public/index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Chat Room</title>
+  <title>Real-Time Chat</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1 id="room-name" class="room-title">Room</h1>
+  <h1 class="room-title">💬 Real-Time Chat</h1>
 
   <div id="chat-messages" class="chat-box"></div>
 
   <form id="chat-form" class="chat-form">
     <input id="msg" type="text" placeholder="Type a message..." autocomplete="off" required />
-    <button type="submit">SEND</button>
+    <button type="submit">Send</button>
   </form>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
 
-    const query = new URLSearchParams(window.location.search);
-    const name = query.get("name") || "Guest";
-    const room = query.get("room") || "General";
-
-    document.getElementById("room-name").innerText = `${room} Room`;
-
-    socket.emit("joinRoom", { name, room });
-
-    socket.on("message", ({ user, text, time, system }) => {
+    socket.on("simpleMessage", ({ text, time }) => {
       const div = document.createElement("div");
-      div.classList.add("message");
-      div.style.margin = "10px";
+      div.className = "message";
+      div.innerText = `[${time}] ${text}`;
+      div.style.backgroundColor = "#e0f7e9";
       div.style.padding = "10px";
+      div.style.margin = "10px";
       div.style.borderRadius = "10px";
-
-      if (system) {
-        div.innerHTML = `<em>[${time}] <strong>System:</strong> ${text}</em>`;
-        div.style.color = "gray";
-      } else {
-        const isOwn = user === name;
-        div.innerHTML = `<strong>[${time}] ${user}:</strong> ${text}`;
-        div.style.backgroundColor = isOwn ? "#cce5ff" : "#d3f2e0";
-        div.style.textAlign = isOwn ? "right" : "left";
-      }
-
       document.getElementById("chat-messages").appendChild(div);
-      document.getElementById("chat-messages").scrollTop = document.getElementById("chat-messages").scrollHeight;
     });
 
     document.getElementById("chat-form").addEventListener("submit", (e) => {
       e.preventDefault();
       const msg = document.getElementById("msg").value.trim();
       if (!msg) return;
-      socket.emit("chatMessage", msg);
+      socket.emit("simpleChatMessage", msg);
       document.getElementById("msg").value = "";
     });
   </script>
