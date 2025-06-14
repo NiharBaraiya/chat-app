@@ -1,7 +1,7 @@
 const express = require("express");
 const http = require("http");
-const path = require("path");
 const socketio = require("socket.io");
+const path = require("path");
 const moment = require("moment-timezone");
 
 const app = express();
@@ -16,26 +16,26 @@ function getTime() {
   return moment().tz("Asia/Kolkata").format("h:mm A");
 }
 
-io.on("connection", socket => {
-  // For room-based chat (Render)
+io.on("connection", (socket) => {
+  // Render user with room
   socket.on("joinRoom", ({ name, room }) => {
-    socket.join(room);
     users[socket.id] = { name, room };
+    socket.join(room);
     socket.emit("message", {
       user: "System",
-      text: `Welcome ${name}!`,
+      text: `Welcome ${name}`,
       time: getTime()
     });
     socket.broadcast.to(room).emit("message", {
       user: "System",
-      text: `${name} joined the chat`,
+      text: `${name} joined`,
       time: getTime()
     });
   });
 
-  // For simple localhost chat
+  // Local user
   socket.on("joinLocalUser", (name) => {
-    users[socket.id] = { name };
+    users[socket.id] = { name }; // no room
   });
 
   socket.on("chatMessage", (msg) => {
@@ -55,7 +55,7 @@ io.on("connection", socket => {
 
   socket.on("typing", (isTyping) => {
     const user = users[socket.id];
-    const text = isTyping ? `${user?.name || "User"} is typing...` : "";
+    const text = isTyping ? `${user?.name} is typing...` : "";
     if (user?.room) {
       socket.to(user.room).emit("typing", text);
     } else {
@@ -68,7 +68,7 @@ io.on("connection", socket => {
     if (user?.room) {
       io.to(user.room).emit("message", {
         user: "System",
-        text: `${user.name} left the chat`,
+        text: `${user.name} left the room`,
         time: getTime()
       });
     }
@@ -77,4 +77,4 @@ io.on("connection", socket => {
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`✅ Server running on ${PORT}`));
+server.listen(PORT, () => console.log(`✅ Server running on http://localhost:${PORT}`));
