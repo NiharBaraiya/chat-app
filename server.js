@@ -27,19 +27,25 @@ app.use(express.static(path.join(__dirname, "public")));
 
 const users = {};
 
-io.on("connection", (socket) => {
-  // ✅ Join room
+io.on("connection", socket => {
   socket.on("joinRoom", ({ name, room }) => {
     socket.join(room);
-    users[socket.id] = { name, room };
 
-    // ✅ Notify others
-    socket.to(room).emit("message", {
-      user: "system",
-      text: ${name} joined the chat,
-      time: moment().format("h:mm A")
+    // Welcome message to the new user
+    socket.emit("message", {
+      user: "System",
+      text: `Welcome ${name} to the chat`,
+      time: new Date().toISOString()
+    });
+
+    // Broadcast to other users
+    socket.broadcast.to(room).emit("message", {
+      user: "System",
+      text: `${name} joined the chat`,  // ✅ Corrected line
+      time: new Date().toISOString()
     });
   });
+});
 
   // ✅ On chat message
   socket.on("chatMessage", (msg) => {
