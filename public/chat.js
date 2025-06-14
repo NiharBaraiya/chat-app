@@ -1,8 +1,8 @@
 const socket = io("https://chat-app-dw0g.onrender.com");
 
 const urlParams = new URLSearchParams(window.location.search);
-let name = urlParams.get("name");
-let room = urlParams.get("room");
+const name = urlParams.get("name");
+const room = urlParams.get("room");
 
 const form = document.getElementById("chatForm");
 const input = document.getElementById("msg");
