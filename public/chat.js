@@ -1,16 +1,30 @@
 const socket = io("https://chat-app-dw0g.onrender.com");
 
-// No need for name/room for local version
-let name = "LocalUser";
+const urlParams = new URLSearchParams(window.location.search);
+let name = urlParams.get("name");
+let room = urlParams.get("room");
 
-// DOM
+// Localhost fallback: if no name/room in URL and running locally
+if (!name || !room || window.location.hostname === "localhost") {
+  name = "LocalUser";
+  room = "General";
+}
+
+// DOM Elements
+const roomNameElem = document.getElementById("room-name");
 const form = document.getElementById("chatForm");
 const input = document.getElementById("msg");
 const messages = document.getElementById("messages");
 const typing = document.getElementById("typing");
 
+// Join room (only if not local simple mode)
+if (roomNameElem) {
+  roomNameElem.innerText = `${room} Room`;
+}
+socket.emit("joinRoom", { name, room });
+
 // Send message
-form.addEventListener("submit", (e) => {
+form.addEventListener("submit", function (e) {
   e.preventDefault();
   const message = input.value.trim();
   if (message) {
@@ -36,7 +50,7 @@ socket.on("message", (message) => {
   messages.scrollTop = messages.scrollHeight;
 });
 
-// Typing indicator
+// Typing
 let typingTimeout;
 input.addEventListener("input", () => {
   socket.emit("typing", true);
