@@ -3,13 +3,13 @@ const socket = io("https://chat-app-dw0g.onrender.com");
 
 // Get name and room from query string
 const urlParams = new URLSearchParams(window.location.search);
-const name = urlParams.get("name");
-const room = urlParams.get("room");
+const name = urlParams.get("name") || "Guest";
+const room = urlParams.get("room") || "General";
 
-// Set room name
+// Set room name in the UI
 document.getElementById("room-name").innerText = room;
 
-// Emit joinRoom
+// Emit joinRoom event
 socket.emit("joinRoom", { name, room });
 
 // DOM elements
@@ -17,44 +17,41 @@ const form = document.getElementById("chatForm");
 const input = document.getElementById("msg");
 const messages = document.getElementById("messages");
 const typing = document.getElementById("typing");
+const userList = document.getElementById("user-list"); // FIX: correct ID used in HTML
 
 // Send message
-form.addEventListener('submit', function(e) {
+form.addEventListener("submit", function (e) {
   e.preventDefault();
   const message = input.value.trim();
   if (message) {
-    socket.emit('chatMessage', message);
-    input.value = '';
+    socket.emit("chatMessage", message);
+    input.value = "";
     input.focus();
   }
 });
 
-// Receive message
+// Receive message from server
 socket.on("message", (message) => {
-  const messagesContainer = document.getElementById("messages");
-  let className = "message";
-
-  if (message.user === "System") {
-    className += " system";
-  } else if (message.user === name) {
-    className += " you";
-  }
+  const className =
+    message.user === "System"
+      ? "message system"
+      : message.user === name
+      ? "message you"
+      : "message";
 
   const html = `
     <li class="${className}">
       <strong>${message.user}</strong>: ${message.text}
-      <br/><small>${message.time || ''}</small>
+      <br/><small>${message.time || ""}</small>
     </li>
   `;
-
-  messagesContainer.innerHTML += html;
-  messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  messages.innerHTML += html;
+  messages.scrollTop = messages.scrollHeight;
 });
 
+// Update user list in sidebar
 socket.on("roomUsers", (users) => {
-  const userList = document.getElementById("userList");
   userList.innerHTML = "";
-
   users.forEach((user) => {
     const li = document.createElement("li");
     li.textContent = user;
@@ -62,14 +59,13 @@ socket.on("roomUsers", (users) => {
   });
 });
 
-
 // Typing indicator
 let typingTimeout;
 input.addEventListener("input", () => {
-  socket.emit("typing", true);
+  socket.emit("typing", `${name} is typing...`);
   clearTimeout(typingTimeout);
   typingTimeout = setTimeout(() => {
-    socket.emit("typing", false);
+    socket.emit("typing", "");
   }, 1000);
 });
 
