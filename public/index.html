@@ -2,33 +2,32 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Join Chat</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Real-Time Chat</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="join-container">
-    <h2>💬 Join a Chat Room</h2>
-    <form id="joinForm">
-      <label for="name">Name:</label>
+
+  <div class="join-container" id="join-container">
+    <h2>Join Chat Room</h2>
+    <form id="join-form">
       <input type="text" id="name" placeholder="Enter your name" required />
-
-      <label for="room">Room:</label>
       <input type="text" id="room" placeholder="Enter room name" required />
-
-      <button type="submit">Join Chat</button>
+      <button type="submit">Join</button>
     </form>
   </div>
 
-  <script>
-    document.getElementById("joinForm").addEventListener("submit", function (e) {
-      e.preventDefault();
-      const name = document.getElementById("name").value.trim();
-      const room = document.getElementById("room").value.trim();
-      if (name && room) {
-        window.location.href = `chat.html?name=${encodeURIComponent(name)}&room=${encodeURIComponent(room)}`;
-      }
-    });
-  </script>
+  <div class="chat-container" id="chat-container" style="display:none;">
+    <h2>💬 Real-Time Chat</h2>
+    <ul id="messages"></ul>
+    <div id="typing"></div>
+    <form id="chat-form">
+      <input id="msg" type="text" autocomplete="off" placeholder="Type a message..." />
+      <button>Send</button>
+    </form>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="client.js"></script>
 </body>
 </html>
