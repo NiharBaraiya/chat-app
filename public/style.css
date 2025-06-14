@@ -34,11 +34,24 @@ body {
 /* Chat container */
 .chat-container {
   flex: 1;
-  padding: 20px;
   display: flex;
   flex-direction: column;
+  padding: 20px;
+  max-width: 800px;
+  margin: 20px auto;
+  background: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
+/* Room title */
+h2 {
+  text-align: center;
+  margin-top: 0;
+  color: #333;
+}
+
+/* Messages list */
 #messages {
   list-style: none;
   padding: 0;
@@ -56,12 +69,23 @@ body {
   border-radius: 10px;
   background: #d1e7dd;
   max-width: 70%;
+  word-wrap: break-word;
 }
 
-#messages li.self {
+/* Own message */
+#messages li.self,
+#messages li.you {
   background: #bee3f8;
   margin-left: auto;
   text-align: right;
+}
+
+/* System message */
+#messages li.system {
+  background: none;
+  color: #888;
+  font-style: italic;
+  text-align: center;
 }
 
 /* Typing indicator */
@@ -71,93 +95,31 @@ body {
   margin: 5px 0 10px;
 }
 
-/* Form */
+/* Form styling */
 form {
   display: flex;
   gap: 10px;
+  margin-top: 10px;
 }
 
 input#msg {
   flex: 1;
   padding: 10px;
+  font-size: 16px;
   border-radius: 5px;
   border: 1px solid #ccc;
-  font-size: 16px;
 }
 
 button {
   padding: 10px 20px;
-  background-color: #007bff;
+  font-size: 16px;
+  background: #007bff;
   color: white;
   border: none;
   border-radius: 5px;
-  font-size: 16px;
   cursor: pointer;
 }
 
 button:hover {
   background-color: #0056b3;
 }
-
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      margin: 0;
-      padding: 0;
-      background: #f0f0f0;
-    }
-
-    .chat-container {
-      max-width: 600px;
-      margin: 20px auto;
-      background: #fff;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-
-    h2 {
-      text-align: center;
-    }
-
-    #messages {
-      list-style-type: none;
-      padding: 0;
-      max-height: 400px;
-      overflow-y: auto;
-    }
-
-    #messages li {
-      margin-bottom: 10px;
-      padding: 6px 10px;
-      border-bottom: 1px solid #eee;
-    }
-
-    #messages li.you {
-      background: #e0ffe0;
-      border-radius: 5px;
-    }
-
-    #messages li.system {
-      color: #888;
-      font-style: italic;
-    }
-
-    form {
-      display: flex;
-      margin-top: 10px;
-    }
-
-    input {
-      flex: 1;
-      padding: 10px;
-      font-size: 16px;
-    }
-
-    button {
-      padding: 10px;
-      font-size: 16px;
-      background: #007bff;
-      color: white;
-      border: none;
-    }
-
