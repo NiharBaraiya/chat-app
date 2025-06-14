@@ -1,38 +1,53 @@
-const socket = io("https://chat-app-dw0g.onrender.com");
+const socket = io();
+const urlParams = new URLSearchParams(window.location.search);
+let name = urlParams.get("name");
+let room = urlParams.get("room");
 
-const params = new URLSearchParams(window.location.search);
-const name = params.get("name");
-const room = params.get("room");
-
-document.getElementById("room-name").innerText = `${room} Room`;
-
+const roomNameElem = document.getElementById("room-name");
 const form = document.getElementById("chatForm");
 const input = document.getElementById("msg");
 const messages = document.getElementById("messages");
 const typing = document.getElementById("typing");
 
-socket.emit("joinRoom", { name, room });
+if (room) {
+  roomNameElem.style.display = "block";
+  roomNameElem.innerText = `${room} Room`;
+  socket.emit("joinRoom", { name, room });
+} else {
+  socket.emit("joinRoom", { name, room: "general" });
+}
 
-form.addEventListener("submit", (e) => {
+form.addEventListener("submit", function (e) {
   e.preventDefault();
-  const msg = input.value.trim();
-  if (msg) {
-    socket.emit("chatMessage", msg);
+  const message = input.value.trim();
+  if (message) {
+    socket.emit("chatMessage", message);
     input.value = "";
     input.focus();
   }
 });
 
-socket.on("message", (msg) => {
-  const cls = msg.user === name ? "you" : msg.user === "System" ? "system" : "other";
-  messages.innerHTML += `<li class="${cls}">[${msg.time}] <strong>${msg.user}</strong>: ${msg.text}</li>`;
+socket.on("message", (message) => {
+  const className = message.user === name
+    ? "you"
+    : message.user === "System"
+    ? "system"
+    : "other";
+
+  const html = `
+    <li class="${className}">
+      [${message.time}] <strong>${message.user}</strong>: ${message.text}
+    </li>
+  `;
+  messages.innerHTML += html;
   messages.scrollTop = messages.scrollHeight;
 });
 
+let typingTimeout;
 input.addEventListener("input", () => {
   socket.emit("typing", true);
-  clearTimeout(window.typingTimeout);
-  window.typingTimeout = setTimeout(() => {
+  clearTimeout(typingTimeout);
+  typingTimeout = setTimeout(() => {
     socket.emit("typing", false);
   }, 1000);
 });
@@ -40,4 +55,3 @@ input.addEventListener("input", () => {
 socket.on("typing", (text) => {
   typing.innerText = text || "";
 });
-
