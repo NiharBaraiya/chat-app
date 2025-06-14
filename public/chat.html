@@ -7,20 +7,25 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="chat-container">
-    <h2 id="room-name">Room</h2>
-    <ul id="messages" style="list-style: none; padding: 0;"></ul>
-    <div id="typing" style="font-style: italic; color: gray;"></div>
+  <!-- Sidebar for room & users -->
+  <div class="sidebar">
+    <h3>Room: <span id="room-name">Room</span></h3>
+    <h4>Users</h4>
+    <ul id="user-list"></ul>
+  </div>
 
+  <!-- Chat area -->
+  <div class="chat-container">
+    <ul id="messages"></ul>
+    <div id="typing"></div>
     <form id="chatForm">
       <input id="msg" autocomplete="off" placeholder="Type a message..." required />
       <button type="submit">SEND</button>
     </form>
   </div>
 
-  <!-- Load Socket.io client from your server -->
+  <!-- Socket.IO -->
   <script src="https://chat-app-dw0g.onrender.com/socket.io/socket.io.js"></script>
-  <!-- Chat Logic -->
   <script src="chat.js"></script>
 </body>
 </html>
