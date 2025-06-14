@@ -10,20 +10,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "cors": "^2.8.5",
     "express": "^5.1.0",
-    "moment": "^2.30.1",
-    "moment-timezone": "^0.6.0",
-    "qs": "^6.14.0",
-    "socket.io": "^4.8.1"
+    "socket.io": "^4.8.1",
+    "moment-timezone": "^0.5.43"
   },
-  "description": "",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/NiharBaraiya/chat-app.git"
-  },
-  "bugs": {
-    "url": "https://github.com/NiharBaraiya/chat-app/issues"
-  },
-  "homepage": "https://github.com/NiharBaraiya/chat-app#readme"
+  "description": ""
 }
