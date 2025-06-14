@@ -1,17 +1,15 @@
-const socket = io(); // Localhost default
-
+const socket = io(); // Localhost
 let username = "";
 
 function startChat() {
-  const nameInput = document.getElementById("username");
-  username = nameInput.value.trim();
+  const input = document.getElementById("username");
+  username = input.value.trim();
   if (!username) return;
 
-  document.getElementById("name-input").style.display = "none";
+  socket.emit("joinLocalUser", username);
+  document.getElementById("start").style.display = "none";
   document.getElementById("chatForm").style.display = "flex";
   document.getElementById("messages").style.display = "block";
-
-  socket.emit("joinLocalUser", username);
 }
 
 const form = document.getElementById("chatForm");
@@ -25,14 +23,12 @@ form.addEventListener("submit", (e) => {
   if (msg) {
     socket.emit("chatMessage", msg);
     input.value = "";
-    input.focus();
   }
 });
 
 socket.on("message", (msg) => {
   const className = msg.user === username ? "you" : "other";
-  const html = `<li class="${className}"><strong>${msg.user}</strong>: ${msg.text}</li>`;
-  messages.innerHTML += html;
+  messages.innerHTML += `<li class="${className}"><strong>${msg.user}</strong>: ${msg.text}</li>`;
   messages.scrollTop = messages.scrollHeight;
 });
 
