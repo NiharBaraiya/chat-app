@@ -1,30 +1,51 @@
+<!-- public/index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Join Chat Room</title>
+  <title>Real-Time Chat</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="join-container" id="join-container">
-    <h2>Join Chat Room</h2>
-    <form id="join-form">
-      <input type="text" id="name" placeholder="Enter your name" required />
-      <input type="text" id="room" placeholder="Enter room name" required />
-      <button type="submit">Join</button>
-    </form>
-  </div>
+  <h1 class="room-title">💬 Real-Time Chat</h1>
 
+  <div id="chat-messages" class="chat-box"></div>
+
+  <form id="chat-form" class="chat-form">
+    <input id="msg" type="text" placeholder="Type a message..." autocomplete="off" required />
+    <button type="submit">Send</button>
+  </form>
+
+  <script src="/socket.io/socket.io.js"></script>
   <script>
-    document.getElementById("join-form").addEventListener("submit", function(e) {
+    const socket = io();
+    const form = document.getElementById("chat-form");
+    const input = document.getElementById("msg");
+    const chatBox = document.getElementById("chat-messages");
+
+    const username = prompt("Enter your name") || "Guest";
+
+    socket.emit("joinSimpleChat", { name: username });
+
+    socket.on("message", ({ user, text, time }) => {
+      const div = document.createElement("div");
+      div.classList.add("message");
+      div.innerText = `[${time}] ${user}: ${text}`;
+      div.style.backgroundColor = "#d3f2e0";
+      div.style.margin = "10px";
+      div.style.padding = "10px";
+      div.style.borderRadius = "10px";
+      chatBox.appendChild(div);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    });
+
+    form.addEventListener("submit", (e) => {
       e.preventDefault();
-      const name = document.getElementById("name").value.trim();
-      const room = document.getElementById("room").value.trim();
-      if (name && room) {
-        // Redirect to chat.html with parameters
-        window.location.href = `chat.html?name=${encodeURIComponent(name)}&room=${encodeURIComponent(room)}`;
-      }
+      const msg = input.value.trim();
+      if (!msg) return;
+      socket.emit("chatMessageSimple", msg);
+      input.value = "";
     });
   </script>
 </body>
