@@ -22,7 +22,7 @@
       const name = document.getElementById("name").value.trim();
       const room = document.getElementById("room").value.trim();
       if (name && room) {
-        window.location.href = chat.html?name=${encodeURIComponent(name)}&room=${encodeURIComponent(room)};
+        window.location.href = `chat.html?name=${encodeURIComponent(name)}&room=${encodeURIComponent(room)}`;
       }
     });
   </script>
