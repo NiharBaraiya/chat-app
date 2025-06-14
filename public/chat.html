@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8" />
   <title>Room Chat</title>
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -11,11 +10,10 @@
     <ul id="messages"></ul>
     <div id="typing"></div>
     <form id="chatForm">
-      <input id="msg" type="text" placeholder="Message..." required />
+      <input id="msg" type="text" placeholder="Type message" required />
       <button type="submit">Send</button>
     </form>
   </div>
-
   <script src="/socket.io/socket.io.js"></script>
   <script src="chat.js"></script>
 </body>
