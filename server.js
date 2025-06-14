@@ -1,64 +1,79 @@
-const path = require("path");
 const express = require("express");
 const http = require("http");
+const path = require("path");
 const socketio = require("socket.io");
-const moment = require("moment");
+const moment = require("moment-timezone");
 
 const app = express();
 const server = http.createServer(app);
 const io = socketio(server);
 
-// Serve static files
 app.use(express.static(path.join(__dirname, "public")));
 
-// In-memory users by room
 const users = {};
 
-function formatMessage(user, text, system = false) {
-  return {
-    user,
-    text,
-    time: moment().format("h:mm A"),
-    system,
-  };
+function getTime() {
+  return moment().tz("Asia/Kolkata").format("h:mm A");
 }
 
-// Handle socket connection
-io.on("connection", (socket) => {
-  // SIMPLE CHAT (localhost only)
-  socket.on("simpleChatMessage", (msg) => {
-    io.emit("simpleMessage", formatMessage("User", msg));
-  });
-
-  // ROOM CHAT (Render)
+io.on("connection", socket => {
   socket.on("joinRoom", ({ name, room }) => {
     socket.join(room);
-    if (!users[room]) users[room] = [];
-    users[room].push({ id: socket.id, name });
+    users[socket.id] = { name, room };
 
-    // Welcome user
-    socket.emit("message", formatMessage("System", `Welcome ${name} to the chat`, true));
-
-    // Broadcast to others in the room
-    socket.broadcast.to(room).emit("message", formatMessage("System", `${name} joined the chat`, true));
-
-    // Handle messages
-    socket.on("chatMessage", (msg) => {
-      io.to(room).emit("message", formatMessage(name, msg));
+    socket.emit("message", {
+      user: "System",
+      text: `Welcome ${name}!`,
+      time: getTime()
     });
 
-    // On disconnect
-    socket.on("disconnect", () => {
-      const userIndex = users[room]?.findIndex((u) => u.id === socket.id);
-      if (userIndex !== -1) {
-        const user = users[room][userIndex];
-        users[room].splice(userIndex, 1);
-        io.to(room).emit("message", formatMessage("System", `${user.name} left the chat`, true));
-      }
+    socket.broadcast.to(room).emit("message", {
+      user: "System",
+      text: `${name} joined the chat`,
+      time: getTime()
     });
+  });
+
+  socket.on("chatMessage", (msg) => {
+    const user = users[socket.id];
+    if (user) {
+      io.to(user.room).emit("message", {
+        user: user.name,
+        text: msg,
+        time: getTime()
+      });
+    } else {
+      io.emit("message", {
+        user: "User",
+        text: msg,
+        time: getTime()
+      });
+    }
+  });
+
+  socket.on("typing", (isTyping) => {
+    const user = users[socket.id];
+    const room = user?.room;
+    const text = isTyping ? `${user?.name || "User"} is typing...` : "";
+    if (room) {
+      socket.to(room).emit("typing", text);
+    } else {
+      socket.broadcast.emit("typing", text);
+    }
+  });
+
+  socket.on("disconnect", () => {
+    const user = users[socket.id];
+    if (user) {
+      io.to(user.room).emit("message", {
+        user: "System",
+        text: `${user.name} left the chat`,
+        time: getTime()
+      });
+      delete users[socket.id];
+    }
   });
 });
 
-// Start server
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
