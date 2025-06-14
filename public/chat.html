@@ -3,18 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Chat Room</title>
+  <title>Room Chat</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h2 id="room-name" style="display: none;"></h2>
+  <h2 id="room-name">Room</h2>
   <ul id="messages"></ul>
   <p id="typing"></p>
   <form id="chatForm">
-    <input id="msg" autocomplete="off" placeholder="Type a message" required />
+    <input id="msg" type="text" placeholder="Message..." autocomplete="off" required />
     <button>Send</button>
   </form>
-  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+
+  <script src="/socket.io/socket.io.js"></script>
   <script src="chat.js"></script>
 </body>
 </html>
