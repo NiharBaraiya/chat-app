@@ -3,7 +3,7 @@ const http = require("http");
 const path = require("path");
 const socketio = require("socket.io");
 const cors = require("cors");
-const moment = require("moment"); // ✅ Import moment for timestamps
+const moment = require("moment"); // ✅ For formatted timestamps
 
 const app = express();
 const server = http.createServer(app);
@@ -25,31 +25,41 @@ const io = socketio(server, {
 // Serve static files
 app.use(express.static(path.join(__dirname, "public")));
 
-const users = {};
+const users = {}; // Store users by socket.id
 
+// ✅ Helper to get user by socket id
+function getCurrentUser(id) {
+  return users[id];
+}
+
+// ✅ Socket.IO logic
 io.on("connection", socket => {
+
+  // When user joins a room
   socket.on("joinRoom", ({ name, room }) => {
     socket.join(room);
 
-    // Welcome message to the new user
+    // Save user
+    users[socket.id] = { name, room };
+
+    // Welcome to the user
     socket.emit("message", {
       user: "System",
       text: `Welcome ${name} to the chat`,
-      time: new Date().toISOString()
+      time: moment().format("h:mm A")
     });
 
-    // Broadcast to other users
+    // Notify others
     socket.broadcast.to(room).emit("message", {
       user: "System",
-      text: `${name} joined the chat`,  // ✅ Corrected line
-      time: new Date().toISOString()
+      text: `${name} joined the chat`,
+      time: moment().format("h:mm A")
     });
   });
-});
 
-  // ✅ On chat message
+  // When user sends a chat message
   socket.on("chatMessage", (msg) => {
-    const user = users[socket.id];
+    const user = getCurrentUser(socket.id);
     if (user) {
       io.to(user.room).emit("message", {
         user: user.name,
@@ -59,18 +69,17 @@ io.on("connection", socket => {
     }
   });
 
-  // ✅ Typing notification
-socket.on("typing", (isTyping) => {
-  const user = getCurrentUser(socket.id); // however you store/get users
-  if (user) {
-    socket.to(user.room).emit("typing", isTyping ? `${user.name} is typing...` : null);
-  }
-});
+  // Typing indicator
+  socket.on("typing", (isTyping) => {
+    const user = getCurrentUser(socket.id);
+    if (user) {
+      socket.to(user.room).emit("typing", isTyping ? `${user.name} is typing...` : null);
+    }
+  });
 
-
-  // ✅ Alternative sendMessage event (optional)
+  // Optional: Alternative message event
   socket.on("sendMessage", (message, callback) => {
-    const user = users[socket.id];
+    const user = getCurrentUser(socket.id);
     if (user) {
       io.to(user.room).emit("message", {
         user: user.name,
@@ -78,16 +87,16 @@ socket.on("typing", (isTyping) => {
         time: moment().format("h:mm A")
       });
     }
-    callback();
+    if (callback) callback();
   });
 
-  // ✅ Handle disconnect
+  // User disconnect
   socket.on("disconnect", () => {
-    const user = users[socket.id];
+    const user = getCurrentUser(socket.id);
     if (user) {
       io.to(user.room).emit("message", {
-        user: "system",
-        text: ${user.name} left the chat,
+        user: "System",
+        text: `${user.name} left the chat`,
         time: moment().format("h:mm A")
       });
       delete users[socket.id];
@@ -95,6 +104,6 @@ socket.on("typing", (isTyping) => {
   });
 });
 
-// ✅ Server listen
+// Start the server
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(Server running on port ${PORT}));
+server.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
