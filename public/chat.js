@@ -1,8 +1,8 @@
-const socket = io("https://chat-app-dw0g.onrender.com");
+const socket = io(); // will auto-connect to render or local
 
-const urlParams = new URLSearchParams(window.location.search);
-const name = urlParams.get("name");
-const room = urlParams.get("room");
+const params = new URLSearchParams(window.location.search);
+const name = params.get("name");
+const room = params.get("room");
 
 const form = document.getElementById("chatForm");
 const input = document.getElementById("msg");
@@ -10,25 +10,21 @@ const messages = document.getElementById("messages");
 const typing = document.getElementById("typing");
 const roomName = document.getElementById("room-name");
 
-if (name && room) {
-  socket.emit("joinRoom", { name, room });
-  roomName.innerText = `${room} Room`;
-}
+socket.emit("joinRoom", { name, room });
+roomName.innerText = `${room} Room`;
 
-form.addEventListener("submit", function (e) {
+form.addEventListener("submit", (e) => {
   e.preventDefault();
   const msg = input.value.trim();
   if (msg) {
     socket.emit("chatMessage", msg);
     input.value = "";
-    input.focus();
   }
 });
 
 socket.on("message", (msg) => {
   const className = msg.user === name ? "you" : msg.user === "System" ? "system" : "other";
-  const html = `<li class="${className}">[${msg.time}] <strong>${msg.user}</strong>: ${msg.text}</li>`;
-  messages.innerHTML += html;
+  messages.innerHTML += `<li class="${className}">[${msg.time}] <strong>${msg.user}</strong>: ${msg.text}</li>`;
   messages.scrollTop = messages.scrollHeight;
 });
 
