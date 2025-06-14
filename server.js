@@ -8,7 +8,14 @@ const app = express();
 const server = http.createServer(app);
 const io = socketio(server);
 
-app.use(express.static(path.join(__dirname, "public")));
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+app.get("/chat.html", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "chat.html"));
+});
+
 
 const users = {};
 
