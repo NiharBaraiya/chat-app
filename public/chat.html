@@ -16,15 +16,16 @@
 
   <!-- Chat area -->
   <div class="chat-container">
-    <ul id="messages"></ul>
-    <div id="typing"></div>
-    <form id="chatForm">
-      <input id="msg" autocomplete="off" placeholder="Type a message..." required />
+    <ul id="messages" style="list-style: none; padding: 0; margin: 0;"></ul>
+    <div id="typing" style="font-style: italic; color: gray; padding: 5px 10px;"></div>
+    
+    <form id="chatForm" style="display: flex; gap: 10px; padding: 10px;">
+      <input id="msg" autocomplete="off" placeholder="Type a message..." required style="flex: 1; padding: 10px;" />
       <button type="submit">SEND</button>
     </form>
   </div>
 
-  <!-- Socket.IO -->
+  <!-- Socket.IO Client -->
   <script src="https://chat-app-dw0g.onrender.com/socket.io/socket.io.js"></script>
   <script src="chat.js"></script>
 </body>
