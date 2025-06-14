@@ -5,6 +5,13 @@ const socketIo = require("socket.io");
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
+const formatMessage = (user, text) => {
+  return {
+    user,
+    text,
+    time: new Date().toISOString()
+  };
+};
 
 app.use(express.static("public"));
 
