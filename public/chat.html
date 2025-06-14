@@ -2,23 +2,108 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>💬 Real-Time Chat</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Real-Time Chat App</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #89f7fe, #66a6ff);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+    }
+
+    #join-container, #chat-container {
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      margin-top: 50px;
+      width: 90%;
+      max-width: 600px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    #messages {
+      list-style: none;
+      padding: 0;
+      max-height: 400px;
+      overflow-y: auto;
+      margin-bottom: 10px;
+    }
+
+    #messages li {
+      background: #d1f0dc;
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 6px;
+    }
+
+    .you {
+      background: #b2e0f2;
+    }
+
+    .system {
+      background: #f5e3a1;
+    }
+
+    #typing {
+      font-style: italic;
+      margin-bottom: 10px;
+      color: #444;
+    }
+
+    input, button {
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    #chatForm {
+      display: flex;
+      gap: 10px;
+    }
+
+    #msg {
+      flex: 1;
+    }
+
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
 </head>
 <body>
-  <div class="chat-container">
-    <h2 id="room-name">Room</h2>
-    <ul id="messages" style="list-style: none; padding: 0;"></ul>
-    <div id="typing" style="font-style: italic; color: gray;"></div>
 
-    <form id="chatForm">
-      <input id="msg" autocomplete="off" placeholder="Type a message..." required />
-      <button type="submit">SEND</button>
+  <div id="join-container">
+    <h2>Join Chat</h2>
+    <form id="join-form">
+      <input id="name" type="text" placeholder="Enter your name" required />
+      <input id="room" type="text" placeholder="Enter room name" required />
+      <button type="submit">Join</button>
     </form>
   </div>
 
-  <script src="https://chat-app-dw0g.onrender.com/socket.io/socket.io.js"></script>
+  <div id="chat-container" style="display:none;">
+    <h2 id="room-name"></h2>
+    <ul id="messages"></ul>
+    <div id="typing"></div>
+    <form id="chatForm">
+      <input id="msg" type="text" placeholder="Type a message..." required />
+      <button type="submit">Send</button>
+    </form>
+  </div>
+
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <script src="chat.js"></script>
 </body>
 </html>
