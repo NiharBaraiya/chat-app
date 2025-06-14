@@ -2,22 +2,25 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>💬 Real-Time Chat</title>
+  <title>Chat Room</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="style.css" />
- 
 </head>
 <body>
   <div class="chat-container">
-    <h2>💬 Real-Time Chat</h2>
-    <ul id="messages"></ul>
+    <h2 id="room-name">Room</h2>
+    <ul id="messages" style="list-style: none; padding: 0;"></ul>
+    <div id="typing" style="font-style: italic; color: gray;"></div>
+
     <form id="chatForm">
       <input id="msg" autocomplete="off" placeholder="Type a message..." required />
-      <button type="submit">Send</button>
+      <button type="submit">SEND</button>
     </form>
   </div>
 
-  <script src="/socket.io/socket.io.js"></script>
+  <!-- Load Socket.io client from your server -->
+  <script src="https://chat-app-dw0g.onrender.com/socket.io/socket.io.js"></script>
+  <!-- Chat Logic -->
   <script src="chat.js"></script>
 </body>
 </html>
