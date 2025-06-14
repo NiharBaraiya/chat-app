@@ -1,53 +1,43 @@
+<!-- public/index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Join Chat</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <title>Real-Time Chat</title>
+  <style>
+    body { font-family: Arial; }
+    #messages { list-style-type: none; padding: 0; }
+    li { padding: 8px; margin-bottom: 4px; background: #f1f1f1; }
+  </style>
 </head>
 <body>
-  <h2>Join Chat</h2>
-
-  <!-- Localhost Form -->
-  <form id="localForm" style="display: none;">
-    <input type="text" id="localName" placeholder="Enter your name" required />
-    <button type="submit">Start Chat</button>
+  <h2>Chat App</h2>
+  <ul id="messages"></ul>
+  <form id="chat-form">
+    <input id="msg" autocomplete="off" /><button>Send</button>
   </form>
 
-  <!-- Render Form -->
-  <form id="renderForm" style="display: none;">
-    <input type="text" id="renderName" placeholder="Enter your name" required />
-    <input type="text" id="renderRoom" placeholder="Enter room name" required />
-    <button type="submit">Join Room</button>
-  </form>
-
+  <script src="/socket.io/socket.io.js"></script>
   <script>
-    const isLocal = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+    const socket = io();
 
-    if (isLocal) {
-      document.getElementById("localForm").style.display = "block";
-    } else {
-      document.getElementById("renderForm").style.display = "block";
-    }
+    const form = document.getElementById('chat-form');
+    const input = document.getElementById('msg');
+    const messages = document.getElementById('messages');
 
-    // Localhost submit
-    document.getElementById("localForm").addEventListener("submit", (e) => {
+    form.addEventListener('submit', (e) => {
       e.preventDefault();
-      const name = document.getElementById("localName").value.trim();
-      if (name) {
-        window.location.href = `chat.html?name=${name}`;
+      if (input.value) {
+        socket.emit('chat message', input.value);
+        input.value = '';
       }
     });
 
-    // Render submit
-    document.getElementById("renderForm").addEventListener("submit", (e) => {
-      e.preventDefault();
-      const name = document.getElementById("renderName").value.trim();
-      const room = document.getElementById("renderRoom").value.trim();
-      if (name && room) {
-        window.location.href = `chat.html?name=${name}&room=${room}`;
-      }
+    socket.on('chat message', (msg) => {
+      const li = document.createElement('li');
+      li.textContent = msg;
+      messages.appendChild(li);
+      window.scrollTo(0, document.body.scrollHeight);
     });
   </script>
 </body>
