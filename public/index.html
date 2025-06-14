@@ -2,24 +2,30 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Local Chat</title>
+  <title>Join Chat Room</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div id="chat-container">
-    <h2>💬 Local Chat</h2>
-    <form id="name-form">
+    <h2>Join Chat Room</h2>
+    <form id="join-form">
       <input type="text" id="name" placeholder="Enter your name" required />
-      <button type="submit">Join Chat</button>
-    </form>
-    <ul id="messages" style="display:none;"></ul>
-    <div id="typing"></div>
-    <form id="chatForm" style="display:none;">
-      <input id="msg" type="text" placeholder="Type a message..." required />
-      <button>Send</button>
+      <input type="text" id="room" placeholder="Enter room name" required />
+      <button type="submit">Join</button>
     </form>
   </div>
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="local.js"></script>
+
+  <script>
+    document.getElementById("join-form").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const name = document.getElementById("name").value.trim();
+      const room = document.getElementById("room").value.trim();
+
+      if (name && room) {
+        const url = `/chat.html?name=${encodeURIComponent(name)}&room=${encodeURIComponent(room)}`;
+        window.location.href = url;
+      }
+    });
+  </script>
 </body>
 </html>
