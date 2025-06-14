@@ -1,44 +1,49 @@
-<!-- public/index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Real-Time Chat</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>Join Chat Room</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #89f7fe, #66a6ff);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    form {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+    input {
+      display: block;
+      margin-bottom: 15px;
+      padding: 10px;
+      width: 100%;
+      font-size: 16px;
+    }
+    button {
+      padding: 10px;
+      background-color: #007bff;
+      border: none;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      width: 100%;
+    }
+  </style>
 </head>
 <body>
-  <h1 class="room-title">💬 Real-Time Chat</h1>
-
-  <div id="chat-messages" class="chat-box"></div>
-
-  <form id="chat-form" class="chat-form">
-    <input id="msg" type="text" placeholder="Type a message..." autocomplete="off" required />
-    <button type="submit">Send</button>
+  <form action="chat.html" method="GET">
+    <h2>Join Chat Room</h2>
+    <input type="text" name="name" placeholder="Enter your name" required />
+    <input type="text" name="room" placeholder="Enter room name" required />
+    <button type="submit">Join</button>
   </form>
-
-  <script src="/socket.io/socket.io.js"></script>
-  <script>
-    const socket = io();
-
-    socket.on("simpleMessage", ({ text, time }) => {
-      const div = document.createElement("div");
-      div.className = "message";
-      div.innerText = `[${time}] ${text}`;
-      div.style.backgroundColor = "#e0f7e9";
-      div.style.padding = "10px";
-      div.style.margin = "10px";
-      div.style.borderRadius = "10px";
-      document.getElementById("chat-messages").appendChild(div);
-    });
-
-    document.getElementById("chat-form").addEventListener("submit", (e) => {
-      e.preventDefault();
-      const msg = document.getElementById("msg").value.trim();
-      if (!msg) return;
-      socket.emit("simpleChatMessage", msg);
-      document.getElementById("msg").value = "";
-    });
-  </script>
 </body>
 </html>
