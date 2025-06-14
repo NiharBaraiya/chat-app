@@ -1,67 +1,53 @@
+/* Base styling */
 body {
-  font-family: Arial, sans-serif;
-  background-color: #f0f2f5;
-  padding: 20px;
+  margin: 0;
+  display: flex;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(to right, #74ebd5, #acb6e5);
 }
 
-h2 {
-  text-align: center;
+/* Sidebar */
+.sidebar {
+  width: 220px;
+  background-color: #f0f0f0;
+  padding: 15px;
+  border-right: 1px solid #ccc;
+}
+
+.sidebar h3, .sidebar h4 {
+  margin: 10px 0;
+}
+
+#user-list {
+  list-style: none;
+  padding-left: 0;
+  font-size: 14px;
+}
+
+#user-list li {
+  margin-bottom: 5px;
+  padding: 5px;
+  background: #e2e3e5;
+  border-radius: 4px;
+}
+
+/* Chat container */
+.chat-container {
+  flex: 1;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
 }
 
 #messages {
-  list-style-type: none;
+  list-style: none;
   padding: 0;
-  max-height: 300px;
-  overflow-y: auto;
-  background: white;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  margin-bottom: 10px;
-}
-
-#messages li {
-  padding: 8px 12px;
-  border-bottom: 1px solid #eee;
-}
-
-form {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-}
-
-input {
-  flex: 1;
-  padding: 10px;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-}
-
-button {
-  padding: 10px 20px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-#typing {
-  color: gray;
-  font-style: italic;
-  margin: 5px 0;
-}
-body {
-  background: linear-gradient(to right, #74ebd5, #acb6e5);
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-.chat-box {
+  margin: 0 0 10px;
   max-height: 400px;
   overflow-y: auto;
-  border: 1px solid #dee2e6;
-  border-radius: 5px;
-  padding: 10px;
-  background-color: #f8f9fa;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #f8f9fa;
 }
 
 #messages li {
@@ -74,7 +60,41 @@ body {
 
 #messages li.self {
   background: #bee3f8;
-  text-align: right;
   margin-left: auto;
+  text-align: right;
 }
 
+/* Typing indicator */
+#typing {
+  color: gray;
+  font-style: italic;
+  margin: 5px 0 10px;
+}
+
+/* Form */
+form {
+  display: flex;
+  gap: 10px;
+}
+
+input#msg {
+  flex: 1;
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+}
+
+button {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
