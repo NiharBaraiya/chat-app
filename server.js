@@ -60,12 +60,13 @@ io.on("connection", socket => {
   });
 
   // ✅ Typing notification
-  socket.on("typing", (isTyping) => {
-    const user = users[socket.id];
-    if (user) {
-      socket.to(user.room).emit("typing", isTyping ? ${user.name} is typing... : null);
-    }
-  });
+socket.on("typing", (isTyping) => {
+  const user = getCurrentUser(socket.id); // however you store/get users
+  if (user) {
+    socket.to(user.room).emit("typing", isTyping ? `${user.name} is typing...` : null);
+  }
+});
+
 
   // ✅ Alternative sendMessage event (optional)
   socket.on("sendMessage", (message, callback) => {
