@@ -17,16 +17,15 @@ function getTime() {
 }
 
 io.on("connection", socket => {
+  // For room-based chat (Render)
   socket.on("joinRoom", ({ name, room }) => {
     socket.join(room);
     users[socket.id] = { name, room };
-
     socket.emit("message", {
       user: "System",
       text: `Welcome ${name}!`,
       time: getTime()
     });
-
     socket.broadcast.to(room).emit("message", {
       user: "System",
       text: `${name} joined the chat`,
@@ -34,29 +33,31 @@ io.on("connection", socket => {
     });
   });
 
+  // For simple localhost chat
+  socket.on("joinLocalUser", (name) => {
+    users[socket.id] = { name };
+  });
+
   socket.on("chatMessage", (msg) => {
     const user = users[socket.id];
-    if (user) {
-      io.to(user.room).emit("message", {
-        user: user.name,
-        text: msg,
-        time: getTime()
-      });
+    const message = {
+      user: user?.name || "Guest",
+      text: msg,
+      time: getTime()
+    };
+
+    if (user?.room) {
+      io.to(user.room).emit("message", message);
     } else {
-      io.emit("message", {
-        user: "User",
-        text: msg,
-        time: getTime()
-      });
+      io.emit("message", message);
     }
   });
 
   socket.on("typing", (isTyping) => {
     const user = users[socket.id];
-    const room = user?.room;
     const text = isTyping ? `${user?.name || "User"} is typing...` : "";
-    if (room) {
-      socket.to(room).emit("typing", text);
+    if (user?.room) {
+      socket.to(user.room).emit("typing", text);
     } else {
       socket.broadcast.emit("typing", text);
     }
@@ -64,16 +65,16 @@ io.on("connection", socket => {
 
   socket.on("disconnect", () => {
     const user = users[socket.id];
-    if (user) {
+    if (user?.room) {
       io.to(user.room).emit("message", {
         user: "System",
         text: `${user.name} left the chat`,
         time: getTime()
       });
-      delete users[socket.id];
     }
+    delete users[socket.id];
   });
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`✅ Server running on ${PORT}`));
