@@ -1,98 +1,84 @@
-const express = require("express");
-const http = require("http");
 const path = require("path");
+const http = require("http");
+const express = require("express");
 const socketio = require("socket.io");
-const moment = require("moment-timezone");
+const moment = require("moment");
 
 const app = express();
 const server = http.createServer(app);
 const io = socketio(server);
+
+// Serve static files (index.html, chat.html, chat.js, style.css)
 app.use(express.static(path.join(__dirname, "public")));
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
 
-app.get("/chat.html", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "chat.html"));
-});
-
-
+// User tracking per room
 const users = {};
 
-function getIndianTime() {
-  return moment().tz("Asia/Kolkata").format("h:mm A");
+function formatMessage(user, text) {
+  return {
+    user,
+    text,
+    time: moment().format("h:mm A"),
+  };
 }
 
 io.on("connection", (socket) => {
-  socket.on("joinLocal", (name) => {
-    users[socket.id] = { name };
-    socket.broadcast.emit("localMessage", {
-      user: "System",
-      text: `${name} joined`,
-      time: getIndianTime(),
-    });
-  });
+  let currentUser = { id: socket.id, name: "Anonymous", room: null };
 
-  socket.on("localMessage", (text) => {
-    const user = users[socket.id] || { name: "Unknown" };
-    io.emit("localMessage", { user: user.name, text });
-  });
-
+  // Handle room joining
   socket.on("joinRoom", ({ name, room }) => {
+    currentUser.name = name;
+    currentUser.room = room;
     socket.join(room);
-    users[socket.id] = { name, room };
 
-    socket.emit("message", {
-      user: "System",
-      text: `Welcome ${name}`,
-      time: getIndianTime(),
-    });
+    // Save user
+    users[socket.id] = currentUser;
 
-    socket.broadcast.to(room).emit("message", {
-      user: "System",
-      text: `${name} joined the chat`,
-      time: getIndianTime(),
-    });
+    // Welcome current user
+    socket.emit("message", formatMessage("System", `Welcome ${name}!`));
+
+    // Broadcast to others in room
+    socket.broadcast
+      .to(room)
+      .emit("message", formatMessage("System", `${name} joined the chat`));
   });
 
-  socket.on("chatMessage", (text) => {
-    const user = users[socket.id];
-    if (user?.room) {
-      io.to(user.room).emit("message", {
-        user: user.name,
-        text,
-        time: getIndianTime(),
-      });
+  // Handle chat messages
+  socket.on("chatMessage", (msg) => {
+    const sender = users[socket.id];
+    if (sender?.room) {
+      io.to(sender.room).emit("message", formatMessage(sender.name, msg));
+    } else {
+      // For simple chat (no room)
+      io.emit("message", formatMessage("User", msg));
     }
   });
 
+  // Typing indicator
   socket.on("typing", (isTyping) => {
-    const user = users[socket.id];
-    if (user?.room) {
-      socket.to(user.room).emit("typing", isTyping ? `${user.name} is typing...` : "");
-    } else if (user?.name) {
-      socket.broadcast.emit("typing", isTyping ? `${user.name} is typing...` : "");
+    const sender = users[socket.id];
+    const name = sender?.name || "User";
+    const room = sender?.room;
+
+    if (room) {
+      socket.broadcast.to(room).emit("typing", isTyping ? `${name} is typing...` : "");
+    } else {
+      socket.broadcast.emit("typing", isTyping ? "Someone is typing..." : "");
     }
   });
 
+  // Handle disconnect
   socket.on("disconnect", () => {
     const user = users[socket.id];
     if (user?.room) {
-      io.to(user.room).emit("message", {
-        user: "System",
-        text: `${user.name} left`,
-        time: getIndianTime(),
-      });
-    } else if (user?.name) {
-      socket.broadcast.emit("localMessage", {
-        user: "System",
-        text: `${user.name} left`,
-        time: getIndianTime(),
-      });
+      socket.broadcast
+        .to(user.room)
+        .emit("message", formatMessage("System", `${user.name} left the chat`));
     }
     delete users[socket.id];
   });
 });
 
+// Run server
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`✅ Server started on ${PORT}`));
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
