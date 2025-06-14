@@ -1,5 +1,12 @@
-const socket = io();
+// public/chat.js
 
+// Auto-detect if running on Render or Localhost
+const isRender = window.location.hostname.includes("onrender.com");
+const socket = isRender
+  ? io("https://chat-app-dw0g.onrender.com")
+  : io(); // defaults to localhost
+
+// URL params for chat.html?name=...&room=...
 const urlParams = new URLSearchParams(window.location.search);
 let name = urlParams.get("name");
 let room = urlParams.get("room");
@@ -10,7 +17,7 @@ const input = document.getElementById("msg");
 const messages = document.getElementById("messages");
 const typing = document.getElementById("typing");
 
-// If room chat
+// If name and room are present (room chat)
 if (name && room) {
   socket.emit("joinRoom", { name, room });
   if (roomNameElem) {
@@ -31,13 +38,13 @@ form.addEventListener("submit", function (e) {
 
 // Receive message
 socket.on("message", (message) => {
-  const className = name
-    ? message.user === name
+  const isRoomChat = name && room;
+  const className =
+    isRoomChat && message.user === name
       ? "you"
       : message.user === "System"
       ? "system"
-      : "other"
-    : "other";
+      : "other";
 
   const html = `
     <li class="${className}">
