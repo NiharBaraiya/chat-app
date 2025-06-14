@@ -1,24 +1,13 @@
 const socket = io("https://chat-app-dw0g.onrender.com");
 
-// Get name and room from URL
-const urlParams = new URLSearchParams(window.location.search);
-let name = urlParams.get("name") || "Guest";
-let room = urlParams.get("room") || "General";
+// No need for name/room for local version
+let name = "LocalUser";
 
-// DOM Elements
-const roomNameElem = document.getElementById("room-name");
+// DOM
 const form = document.getElementById("chatForm");
 const input = document.getElementById("msg");
 const messages = document.getElementById("messages");
 const typing = document.getElementById("typing");
-
-// Join chat room
-function joinChat(name, room) {
-  socket.emit("joinRoom", { name, room });
-  roomNameElem.innerText = `${room} Room`;
-}
-
-joinChat(name, room);
 
 // Send message
 form.addEventListener("submit", (e) => {
@@ -31,7 +20,7 @@ form.addEventListener("submit", (e) => {
   }
 });
 
-// Receive messages
+// Receive message
 socket.on("message", (message) => {
   const className =
     message.user === name
@@ -43,7 +32,6 @@ socket.on("message", (message) => {
   const li = document.createElement("li");
   li.className = className;
   li.innerHTML = `[${message.time}] <strong>${message.user}</strong>: ${message.text}`;
-
   messages.appendChild(li);
   messages.scrollTop = messages.scrollHeight;
 });
