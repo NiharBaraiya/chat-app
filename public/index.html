@@ -2,28 +2,51 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Join Chat Room</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Join Chat</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="chat-container">
-    <h2>Join Chat Room</h2>
-    <form id="join-form">
-      <input type="text" id="name" placeholder="Enter your name" required />
-      <input type="text" id="room" placeholder="Enter room name" required />
-      <button type="submit">Join</button>
-    </form>
-  </div>
+  <h2>Join Chat</h2>
+
+  <!-- Localhost Form -->
+  <form id="localForm" style="display: none;">
+    <input type="text" id="localName" placeholder="Enter your name" required />
+    <button type="submit">Start Chat</button>
+  </form>
+
+  <!-- Render Form -->
+  <form id="renderForm" style="display: none;">
+    <input type="text" id="renderName" placeholder="Enter your name" required />
+    <input type="text" id="renderRoom" placeholder="Enter room name" required />
+    <button type="submit">Join Room</button>
+  </form>
 
   <script>
-    document.getElementById("join-form").addEventListener("submit", function (e) {
-      e.preventDefault();
-      const name = document.getElementById("name").value.trim();
-      const room = document.getElementById("room").value.trim();
+    const isLocal = location.hostname === "localhost" || location.hostname === "127.0.0.1";
 
+    if (isLocal) {
+      document.getElementById("localForm").style.display = "block";
+    } else {
+      document.getElementById("renderForm").style.display = "block";
+    }
+
+    // Localhost submit
+    document.getElementById("localForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const name = document.getElementById("localName").value.trim();
+      if (name) {
+        window.location.href = `chat.html?name=${name}`;
+      }
+    });
+
+    // Render submit
+    document.getElementById("renderForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const name = document.getElementById("renderName").value.trim();
+      const room = document.getElementById("renderRoom").value.trim();
       if (name && room) {
-        const url = `/chat.html?name=${encodeURIComponent(name)}&room=${encodeURIComponent(room)}`;
-        window.location.href = url;
+        window.location.href = `chat.html?name=${name}&room=${room}`;
       }
     });
   </script>
