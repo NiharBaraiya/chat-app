@@ -29,16 +29,34 @@ app.get("/index", (req, res) => {
 });
 
 // ========== ✅ Socket.io logic ==========
-const users = {}; // ✅ Must define this to track connected users
+const users = {};         // Track socket.id → user
+const roomUsers = {};     // Track room → Set of usernames
 
 io.on("connection", (socket) => {
   // ✅ Handle joinRoom event
   socket.on("joinRoom", ({ name, room }) => {
     const currentUser = { name, room };
     users[socket.id] = currentUser;
-
     socket.join(room);
+
+    // ✅ Initialize Set for room if not present
+    if (!roomUsers[room]) {
+      roomUsers[room] = new Set();
+    }
+
+    // ✅ Notify new user about others already in room
+    const existing = [...roomUsers[room]].filter((u) => u !== name);
+    if (existing.length > 0) {
+      socket.emit("message", formatMessage("System", `${existing.join(", ")} already joined this chat.`));
+    }
+
+    // ✅ Add new user to room set
+    roomUsers[room].add(name);
+
+    // ✅ Welcome new user
     socket.emit("message", formatMessage("System", `Welcome ${name}!`));
+
+    // ✅ Notify others in the room
     socket.broadcast
       .to(room)
       .emit("message", formatMessage("System", `${name} joined the chat`));
@@ -67,6 +85,15 @@ io.on("connection", (socket) => {
     if (user) {
       socket.to(user.room).emit("message", formatMessage("System", `${user.name} left the chat.`));
       socket.to(user.room).emit("typing", "");
+      
+      // ✅ Remove from roomUsers
+      if (roomUsers[user.room]) {
+        roomUsers[user.room].delete(user.name);
+        if (roomUsers[user.room].size === 0) {
+          delete roomUsers[user.room]; // Cleanup room
+        }
+      }
+
       delete users[socket.id];
     }
   });
