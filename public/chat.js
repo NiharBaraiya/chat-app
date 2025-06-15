@@ -1,28 +1,19 @@
-// public/chat.js
+const socket = io();
 
-// Auto-detect if running on Render or Localhost
-const isRender = window.location.hostname.includes("onrender.com");
-const socket = isRender
-  ? io("https://chat-app-dw0g.onrender.com")
-  : io(); // defaults to localhost
-
-// URL params for chat.html?name=...&room=...
 const urlParams = new URLSearchParams(window.location.search);
-let name = urlParams.get("name");
-let room = urlParams.get("room");
+const name = urlParams.get("name");
+const room = urlParams.get("room");
 
-const roomNameElem = document.getElementById("room-name");
 const form = document.getElementById("chatForm");
 const input = document.getElementById("msg");
 const messages = document.getElementById("messages");
 const typing = document.getElementById("typing");
+const roomNameElem = document.getElementById("room-name");
 
-// If name and room are present (room chat)
+// Join room if name and room in URL
 if (name && room) {
   socket.emit("joinRoom", { name, room });
-  if (roomNameElem) {
-    roomNameElem.innerText = `${room} Room`;
-  }
+  if (roomNameElem) roomNameElem.innerText = `${room} Room`;
 }
 
 // Send message
@@ -38,20 +29,9 @@ form.addEventListener("submit", function (e) {
 
 // Receive message
 socket.on("message", (message) => {
-  const isRoomChat = name && room;
-  const className =
-    isRoomChat && message.user === name
-      ? "you"
-      : message.user === "System"
-      ? "system"
-      : "other";
-
-  const html = `
-    <li class="${className}">
-      [${message.time}] <strong>${message.user}</strong>: ${message.text}
-    </li>
-  `;
-  messages.innerHTML += html;
+  const li = document.createElement("li");
+  li.innerHTML = `[${message.time}] <strong>${message.user}</strong>: ${message.text}`;
+  messages.appendChild(li);
   messages.scrollTop = messages.scrollHeight;
 });
 
