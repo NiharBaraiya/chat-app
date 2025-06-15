@@ -199,6 +199,12 @@ body {
   box-shadow: 0 4px 8px rgba(0, 123, 255, 0.15);
   animation: fadeInUp 0.3s ease;
 }
+#messages li.sender,
+#messages li.receiver {
+  font-size: 15px;
+  padding: 12px 14px 22px;
+  max-width: 90%;
+}
 
 #messages li.sender::after {
   content: "";
