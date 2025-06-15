@@ -1,0 +1,31 @@
+<!-- public/simple.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Join Room Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="join-container">
+    <h2>Join Chat Room</h2>
+    <form id="joinForm">
+      <input type="text" id="name" placeholder="Enter your name" required />
+      <input type="text" id="room" placeholder="Enter room name" required />
+      <button type="submit">Join Room</button>
+    </form>
+  </div>
+
+  <script>
+    document.getElementById("joinForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const name = document.getElementById("name").value.trim();
+      const room = document.getElementById("room").value.trim();
+      if (name && room) {
+        window.location.href = `chat.html?name=${encodeURIComponent(name)}&room=${encodeURIComponent(room)}`;
+      }
+    });
+  </script>
+</body>
+</html>
