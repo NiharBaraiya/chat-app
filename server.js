@@ -1,98 +1,64 @@
-const path = require("path");
-const http = require("http");
 const express = require("express");
-const socketio = require("socket.io");
-const moment = require("moment");
-
 const app = express();
-const server = http.createServer(app);
-const io = socketio(server);
-// ✅ Force Render root URL to open simple.html
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "simple.html"));
-});
+const http = require("http").createServer(app);
+const path = require("path");
+const { Server } = require("socket.io");
+const io = new Server(http);
+const PORT = process.env.PORT || 3000;
 
-// Serve public folder (for index.html, simple.html, chat.html etc.)
+// Serve static files
 app.use(express.static(path.join(__dirname, "public")));
 
-const users = {}; // Store users by socket.id
+// Serve index.html for localhost
+app.get("/", (req, res) => {
+  const host = req.headers.host;
 
-function formatMessage(user, text) {
-  return {
-    user,
-    text,
-    time: moment().format("h:mm A"),
-  };
-}
+  if (host.includes("localhost")) {
+    // Serve index.html for localhost
+    res.sendFile(path.join(__dirname, "public", "index.html"));
+  } else {
+    // Serve simple.html for Render
+    res.sendFile(path.join(__dirname, "public", "simple.html"));
+  }
+});
 
+// SOCKET.IO LOGIC
 io.on("connection", (socket) => {
-  let currentUser = {
-    id: socket.id,
-    name: "Anonymous",
-    room: null,
-  };
+  let username = "Anonymous";
 
-  // Room-based join (used by Render via chat.html?name=...&room=...)
   socket.on("joinRoom", ({ name, room }) => {
-    currentUser.name = name;
-    currentUser.room = room;
-    users[socket.id] = currentUser;
-
+    username = name || "Anonymous";
     socket.join(room);
-
-    socket.emit("message", formatMessage("System", `Welcome ${name}!`));
-    socket.broadcast
-      .to(room)
-      .emit("message", formatMessage("System", `${name} joined the chat`));
+    socket.to(room).emit("message", {
+      user: "System",
+      text: `${username} joined the room`,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    });
   });
 
-  // Handle chat message
-  socket.on("chatMessage", (msgData) => {
-    const sender = users[socket.id];
-    let user = "User";
-    let room = null;
-    let msg = msgData;
+  socket.on("chatMessage", (msg) => {
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const user = typeof msg === "object" ? msg.name : username;
+    const text = typeof msg === "object" ? msg.msg : msg;
 
-    if (typeof msgData === "object") {
-      user = msgData.name || "User";
-      msg = msgData.msg;
-    } else if (sender) {
-      user = sender.name || "User";
-      room = sender.room;
-    }
-
-    const formatted = formatMessage(user, msg);
-
-    // If room is present, send to room; otherwise global
-    room
-      ? io.to(room).emit("message", formatted)
-      : io.emit("message", formatted);
+    io.to(socket.rooms.values().next().value).emit("message", {
+      user,
+      text,
+      time
+    });
   });
 
-  // Typing
-  socket.on("typing", (isTyping) => {
-    const sender = users[socket.id];
-    const room = sender?.room;
-    const name = sender?.name || "User";
-    const msg = isTyping ? `${name} is typing...` : "";
-
-    room
-      ? socket.broadcast.to(room).emit("typing", msg)
-      : socket.broadcast.emit("typing", msg);
+  socket.on("typing", (status) => {
+    const text = status ? `${username} is typing...` : "";
+    socket.broadcast.emit("typing", text);
   });
 
-  // Disconnect
   socket.on("disconnect", () => {
-    const user = users[socket.id];
-    if (user?.room) {
-      socket.broadcast
-        .to(user.room)
-        .emit("message", formatMessage("System", `${user.name} left`));
-    }
-    delete users[socket.id];
+    io.emit("typing", "");
   });
 });
 
-// Start server
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// Start the server
+http.listen(PORT, () => {
+  console.log(`✅ Server running on http://localhost:${PORT}`);
+});
