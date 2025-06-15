@@ -1,4 +1,4 @@
-/* ==== RESET & BASE ==== */
+/* ==== RESET & BASE STYLES ==== */
 * {
   margin: 0;
   padding: 0;
@@ -10,131 +10,180 @@ body {
   background: linear-gradient(135deg, #74ebd5, #ACB6E5);
   min-height: 100vh;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: 30px 15px;
-  animation: fadeInBody 0.6s ease-in;
+  padding: 30px 20px;
+  animation: fadeInBody 0.6s ease;
 }
 
-/* ==== CHAT CONTAINER ==== */
+/* ==== SHARED CONTAINER ==== */
+.join-container,
 .chat-container {
-  background-color: #fff;
-  width: 100%;
-  max-width: 600px;
+  background-color: #ffffff;
   padding: 30px 25px;
   border-radius: 16px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
+  width: 100%;
   animation: slideFadeIn 0.5s ease-in-out;
+}
+
+/* ==== JOIN PAGE ==== */
+.join-container h2 {
+  text-align: center;
+  margin-bottom: 25px;
+  color: #333;
+  font-size: 28px;
+}
+
+.join-container input {
+  width: 100%;
+  padding: 14px;
+  margin-bottom: 18px;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  font-size: 16px;
+  transition: border-color 0.3s;
+}
+
+.join-container input:focus {
+  border-color: #007bff;
+  outline: none;
+}
+
+.join-container button {
+  width: 100%;
+  padding: 14px;
+  background-color: #007bff;
+  color: white;
+  font-size: 16px;
+  font-weight: 500;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.join-container button:hover {
+  background-color: #0056b3;
 }
 
 /* ==== ROOM NAME ==== */
 #room-name {
-  font-size: 24px;
+  text-align: center;
+  font-size: 22px;
   font-weight: bold;
   color: #007bff;
-  text-align: center;
-  margin-bottom: 20px;
-  background-color: #f0f8ff;
-  padding: 12px;
+  background: #f0f8ff;
+  padding: 10px;
   border-radius: 10px;
-  box-shadow: inset 0 0 5px rgba(0,0,0,0.05);
+  margin-bottom: 20px;
   animation: fadeIn 0.4s ease;
 }
 
-/* ==== MESSAGES LIST ==== */
+/* ==== MESSAGES CONTAINER ==== */
 #messages {
   list-style: none;
-  max-height: 300px;
+  padding: 15px;
+  max-height: 320px;
   overflow-y: auto;
-  padding: 10px;
-  margin-bottom: 15px;
-  background: #f9f9f9;
-  border-radius: 12px;
+  background-color: #f9f9f9;
   border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  margin-bottom: 15px;
   scroll-behavior: smooth;
-  animation: fadeInUp 0.3s ease;
-}
-
-/* ==== SCROLLBAR ==== */
-#messages::-webkit-scrollbar {
-  width: 8px;
-}
-#messages::-webkit-scrollbar-thumb {
-  background: #ccc;
-  border-radius: 8px;
-}
-
-/* ==== CHAT MESSAGE COMMON ==== */
-.chat-message {
+  animation: fadeIn 0.3s ease-in;
   display: flex;
-  align-items: baseline;
-  padding: 10px 14px;
-  margin: 8px 0;
-  background: #fff;
-  border-radius: 10px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ==== INDIVIDUAL MESSAGE ==== */
+.chat-message {
+  display: inline-block;
+  max-width: 85%;
+  padding: 12px 14px;
+  background-color: #ffffff;
+  border: 1px solid #ddd;
+  border-radius: 16px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   animation: fadeInUp 0.3s ease;
-  border-left: 4px solid transparent;
+  position: relative;
+  word-wrap: break-word;
 }
 
 /* ==== TIMESTAMP ==== */
-.timestamp {
-  color: #888;
+.chat-message .timestamp {
+  color: #999;
   font-size: 12px;
-  margin-right: 8px;
   font-family: monospace;
+  margin-right: 8px;
+  position: absolute;
+  bottom: 4px;
+  right: 10px;
 }
-.timestamp::before { content: "["; }
-.timestamp::after { content: "]"; }
+.chat-message .timestamp::before {
+  content: "[";
+}
+.chat-message .timestamp::after {
+  content: "]";
+}
 
 /* ==== USERNAME ==== */
-.username {
-  font-weight: bold;
+.chat-message .username {
+  font-weight: 600;
   color: #007bff;
-  margin-right: 6px;
+  margin-bottom: 4px;
+  display: block;
 }
 
-/* ==== TEXT ==== */
-.text {
+.chat-message .text {
   color: #222;
-  flex: 1;
   word-break: break-word;
+  padding-right: 60px; /* for timestamp */
 }
 
-/* ==== SENDER ==== */
-.sender {
-  justify-content: flex-end;
+/* ==== SENDER/RECEIVER VARIATION ==== */
+#messages li.sender {
+  align-self: flex-end;
   background-color: #007bff;
   color: white;
-  text-align: right;
-  border-left-color: #0056b3;
+  text-align: left;
+  border-radius: 16px 16px 4px 16px;
 }
-.sender .username {
+#messages li.sender .username {
+  color: #cce5ff;
+}
+#messages li.sender .timestamp {
   color: #e0e0e0;
 }
 
-/* ==== RECEIVER ==== */
-.receiver {
-  justify-content: flex-start;
+#messages li.receiver {
+  align-self: flex-start;
   background-color: #28a745;
   color: white;
   text-align: left;
-  border-left-color: #1c7c30;
+  border-radius: 16px 16px 16px 4px;
 }
-.receiver .username {
-  color: #d0f1d0;
+#messages li.receiver .username {
+  color: #d0f5d6;
+}
+#messages li.receiver .timestamp {
+  color: #e6ffe6;
 }
 
 /* ==== SYSTEM MESSAGES ==== */
-.system {
-  text-align: center;
+#messages li.system {
   font-style: italic;
-  font-size: 14px;
-  padding: 10px;
-  border-radius: 10px;
-  margin: 14px auto;
-  max-width: 85%;
-  animation: fadeIn 0.4s ease;
+  text-align: center;
+  padding: 12px 20px;
+  margin: 16px auto;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 500;
+  max-width: 80%;
+  animation: fadeInUp 0.3s ease;
 }
 
 .system.join {
@@ -155,20 +204,20 @@ body {
   border-left: 6px solid #42a5f5;
 }
 
-/* ==== TYPING ==== */
+/* ==== TYPING INDICATOR ==== */
 #typing {
   font-style: italic;
   font-size: 14px;
   color: #555;
-  padding: 4px 10px;
+  padding: 5px 10px;
   height: 20px;
 }
 
-/* ==== FORM ==== */
+/* ==== CHAT INPUT FORM ==== */
 #chatForm {
   display: flex;
   gap: 10px;
-  margin-top: 10px;
+  width: 100%;
 }
 
 #msg {
@@ -186,11 +235,10 @@ body {
 }
 
 #chatForm button {
-  padding: 12px 18px;
+  padding: 12px 20px;
   background-color: #28a745;
   color: white;
   font-size: 16px;
-  font-weight: 500;
   border: none;
   border-radius: 10px;
   cursor: pointer;
@@ -201,38 +249,67 @@ body {
   background-color: #1e7e34;
 }
 
+/* ==== SCROLLBAR ==== */
+#messages::-webkit-scrollbar {
+  width: 8px;
+}
+#messages::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 10px;
+}
+
 /* ==== ANIMATIONS ==== */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(15px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes slideFadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes fadeInBody {
-  from { opacity: 0; transform: scale(0.97); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* ==== RESPONSIVE ==== */
 @media (max-width: 600px) {
+  .join-container,
   .chat-container {
     padding: 20px 15px;
   }
 
-  #room-name {
-    font-size: 20px;
-  }
-
-  #msg, #chatForm button {
+  #chatForm button,
+  #msg {
     font-size: 14px;
     padding: 10px;
   }
@@ -240,5 +317,10 @@ body {
   .chat-message {
     font-size: 14px;
     padding: 10px;
+  }
+
+  h2,
+  #room-name {
+    font-size: 20px;
   }
 }
