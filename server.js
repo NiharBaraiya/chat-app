@@ -8,8 +8,8 @@ const app = express();
 const server = http.createServer(app);
 const io = socketio(server);
 
-// Serve static files (index.html, chat.html, chat.js, style.css)
 app.use(express.static(path.join(__dirname, "public")));
+
 
 // User tracking per room
 const users = {};
