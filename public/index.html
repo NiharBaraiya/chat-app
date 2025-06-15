@@ -38,7 +38,8 @@
 
     socket.on("message", (message) => {
       const li = document.createElement("li");
-      li.innerHTML = `[${message.time}] <strong>${message.user}</strong>: ${message.text}`;
+    li.innerHTML = `<span class="timestamp">[${message.time}]</span> <span class="user">${message.user}</span>: ${message.text}`;
+
       messages.appendChild(li);
       messages.scrollTop = messages.scrollHeight;
     });
