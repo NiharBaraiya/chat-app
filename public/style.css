@@ -1,37 +1,40 @@
-/* ===== GLOBAL RESET & BASE STYLES ===== */
+/* ==== RESET & BASE STYLES ==== */
 * {
-  box-sizing: border-box;
   margin: 0;
   padding: 0;
+  box-sizing: border-box;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 body {
-  background: linear-gradient(to right, #74ebd5, #ACB6E5);
+  background: linear-gradient(135deg, #74ebd5, #ACB6E5);
   min-height: 100vh;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   justify-content: center;
-  padding: 20px;
+  align-items: center;
+  padding: 30px 20px;
+  animation: fadeInBody 0.6s ease;
 }
 
-/* ===== CONTAINER STYLES ===== */
+/* ==== SHARED CONTAINER ==== */
 .join-container,
 .chat-container {
-  background-color: #fff;
+  background-color: #ffffff;
   padding: 30px 25px;
   border-radius: 16px;
   box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
   max-width: 600px;
   width: 100%;
-  animation: fadeInUp 0.5s ease-in-out;
+  animation: slideFadeIn 0.5s ease-in-out;
 }
 
-/* ===== JOIN PAGE ===== */
+/* ==== JOIN PAGE ==== */
 .join-container h2 {
   text-align: center;
   margin-bottom: 25px;
   color: #333;
+  font-size: 28px;
 }
 
 .join-container input {
@@ -41,7 +44,7 @@ body {
   border: 1px solid #ccc;
   border-radius: 12px;
   font-size: 16px;
-  transition: border-color 0.3s ease;
+  transition: border-color 0.3s;
 }
 
 .join-container input:focus {
@@ -59,135 +62,125 @@ body {
   border: none;
   border-radius: 12px;
   cursor: pointer;
-  transition: background 0.3s;
+  transition: background 0.3s ease;
 }
 
 .join-container button:hover {
   background-color: #0056b3;
 }
 
-/* ===== ROOM NAME ===== */
+/* ==== ROOM NAME ==== */
 #room-name {
   text-align: center;
-  color: #007bff;
   font-size: 22px;
   font-weight: bold;
-  margin-bottom: 20px;
-  padding: 10px;
-  border-radius: 8px;
+  color: #007bff;
   background: #f0f8ff;
-  animation: fadeInUp 0.5s ease-in-out;
+  padding: 10px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  animation: fadeIn 0.4s ease;
 }
 
-/* ===== CHAT MESSAGES LIST ===== */
+/* ==== MESSAGES CONTAINER ==== */
 #messages {
-  list-style-type: none;
-  padding: 10px;
-  border: 1px solid #e0e0e0;
-  border-radius: 12px;
-  max-height: 300px;
+  list-style: none;
+  padding: 15px;
+  max-height: 320px;
   overflow-y: auto;
   background-color: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
   margin-bottom: 15px;
   scroll-behavior: smooth;
+  animation: fadeIn 0.3s ease-in;
 }
 
-/* ===== INDIVIDUAL MESSAGE STYLE ===== */
+/* ==== INDIVIDUAL MESSAGE ==== */
 .chat-message {
   display: flex;
   align-items: baseline;
-  padding: 10px 14px;
+  padding: 12px 14px;
   margin: 6px 0;
-  background-color: #fefefe;
+  background-color: #ffffff;
   border: 1px solid #ddd;
   border-radius: 10px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-  animation: fadeIn 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  animation: fadeInUp 0.3s ease;
 }
 
-/* Timestamp with Brackets */
 .chat-message .timestamp {
   color: #999;
   font-size: 13px;
   font-family: monospace;
-  margin-right: 10px;
-  flex-shrink: 0;
+  margin-right: 8px;
 }
-
 .chat-message .timestamp::before {
   content: "[";
 }
-
 .chat-message .timestamp::after {
   content: "]";
 }
 
-/* Username */
 .chat-message .username {
   font-weight: 600;
   color: #007bff;
   margin-right: 6px;
 }
 
-/* Message text */
 .chat-message .text {
   flex: 1;
   color: #222;
   word-break: break-word;
 }
 
-/* Sender and Receiver variation */
+/* ==== SENDER/RECEIVER VARIATION ==== */
 #messages li.sender {
   background-color: #007bff;
   color: white;
-  text-align: right;
   justify-content: flex-end;
+  text-align: right;
 }
 
 #messages li.receiver {
   background-color: #28a745;
   color: white;
+  justify-content: flex-start;
   text-align: left;
 }
 
-/* ===== SYSTEM MESSAGES ===== */
+/* ==== SYSTEM MESSAGES ==== */
 #messages li.system {
   font-style: italic;
   text-align: center;
   padding: 12px 20px;
   margin: 16px auto;
   border-radius: 12px;
-  max-width: 80%;
   font-size: 15px;
   font-weight: 500;
-  animation: fadeIn 0.3s ease;
-  background-size: cover;
-  background-repeat: no-repeat;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  max-width: 80%;
+  animation: fadeInUp 0.3s ease;
 }
 
 .system.join {
   background: linear-gradient(120deg, #e0f7e9, #c9f9d5);
   color: #2e7d32;
   border-left: 6px solid #66bb6a;
-  border-right: 6px solid #66bb6a;
 }
 
 .system.left {
   background: linear-gradient(120deg, #ffe0e0, #ffd6d6);
   color: #c62828;
   border-left: 6px solid #ef5350;
-  border-right: 6px solid #ef5350;
 }
 
 .system.info {
   background: linear-gradient(120deg, #e3f2fd, #d0e2ff);
   color: #1565c0;
   border-left: 6px solid #42a5f5;
-  border-right: 6px solid #42a5f5;
 }
 
-/* ===== TYPING INDICATOR ===== */
+/* ==== TYPING INDICATOR ==== */
 #typing {
   font-style: italic;
   font-size: 14px;
@@ -196,18 +189,19 @@ body {
   height: 20px;
 }
 
-/* ===== CHAT INPUT ===== */
+/* ==== CHAT INPUT FORM ==== */
 #chatForm {
   display: flex;
   gap: 10px;
+  width: 100%;
 }
 
 #msg {
-  flex-grow: 1;
+  flex: 1;
   padding: 12px;
   font-size: 16px;
-  border: 1px solid #ccc;
   border-radius: 10px;
+  border: 1px solid #ccc;
   transition: border-color 0.3s ease;
 }
 
@@ -217,39 +211,36 @@ body {
 }
 
 #chatForm button {
-  padding: 12px 18px;
+  padding: 12px 20px;
   background-color: #28a745;
   color: white;
   font-size: 16px;
   border: none;
   border-radius: 10px;
   cursor: pointer;
-  transition: background 0.3s;
+  transition: background 0.3s ease;
 }
 
 #chatForm button:hover {
   background-color: #1e7e34;
 }
 
-/* ===== SCROLLBAR STYLING ===== */
+/* ==== SCROLLBAR ==== */
 #messages::-webkit-scrollbar {
   width: 8px;
 }
-
 #messages::-webkit-scrollbar-thumb {
   background: #ccc;
   border-radius: 10px;
 }
 
-/* ===== ANIMATIONS ===== */
+/* ==== ANIMATIONS ==== */
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(8px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
@@ -264,24 +255,47 @@ body {
   }
 }
 
-/* ===== RESPONSIVE DESIGN ===== */
+@keyframes slideFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInBody {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ==== RESPONSIVE ==== */
 @media (max-width: 600px) {
   .join-container,
   .chat-container {
     padding: 20px 15px;
   }
 
-  #chatForm button {
+  #chatForm button,
+  #msg {
     font-size: 14px;
     padding: 10px;
   }
 
-  #msg {
-    font-size: 14px;
-  }
-
   .chat-message {
     font-size: 14px;
-    padding: 8px 10px;
+    padding: 10px;
+  }
+
+  h2, #room-name {
+    font-size: 20px;
   }
 }
