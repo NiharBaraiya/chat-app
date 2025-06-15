@@ -3,6 +3,11 @@ const http = require("http");
 const express = require("express");
 const socketio = require("socket.io");
 const moment = require("moment");
+// Disable browser cache for development
+app.use((req, res, next) => {
+  res.setHeader("Cache-Control", "no-store");
+  next();
+});
 
 const app = express();
 const server = http.createServer(app);
