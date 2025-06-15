@@ -174,17 +174,46 @@ body {
 }
 
 /* ==== SYSTEM MESSAGES ==== */
+/* ==== SYSTEM MESSAGE BASE STYLE ==== */
 #messages li.system {
-  font-style: italic;
-  text-align: center;
-  padding: 12px 20px;
-  margin: 16px auto;
-  border-radius: 12px;
+  display: block;
+  width: fit-content;
+  max-width: 80%;
+  padding: 14px 20px;
+  margin: 14px auto;
   font-size: 15px;
   font-weight: 500;
-  max-width: 80%;
+  border-radius: 12px;
+  white-space: pre-line; /* ensures each sentence is on a new line if \n is used */
+  line-height: 1.6;
+  word-break: break-word;
+  text-align: center;
   animation: fadeInUp 0.3s ease;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+  border-left: 6px solid #999; /* default fallback */
 }
+
+/* ==== JOIN SYSTEM MESSAGE ==== */
+.system.join {
+  background: linear-gradient(120deg, #e0f7e9, #c9f9d5);
+  color: #1b5e20;
+  border-left-color: #66bb6a;
+}
+
+/* ==== LEFT SYSTEM MESSAGE ==== */
+.system.left {
+  background: linear-gradient(120deg, #ffe0e0, #ffd6d6);
+  color: #b71c1c;
+  border-left-color: #ef5350;
+}
+
+/* ==== INFO SYSTEM MESSAGE ==== */
+.system.info {
+  background: linear-gradient(120deg, #e3f2fd, #d0e2ff);
+  color: #0d47a1;
+  border-left-color: #42a5f5;
+}
+
 /* ==== SENDER MESSAGE ==== */
 #messages li.sender {
   position: relative;
@@ -199,12 +228,7 @@ body {
   box-shadow: 0 4px 8px rgba(0, 123, 255, 0.15);
   animation: fadeInUp 0.3s ease;
 }
-#messages li.sender,
-#messages li.receiver {
-  font-size: 15px;
-  padding: 12px 14px 22px;
-  max-width: 90%;
-}
+
 
 #messages li.sender::after {
   content: "";
