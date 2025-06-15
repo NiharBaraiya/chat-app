@@ -604,3 +604,59 @@ body {
     font-size: 14px;
   }
 }
+
+/* ===== System Message Common Base ===== */
+#messages li.system {
+  font-style: italic;
+  text-align: center;
+  padding: 12px 20px;
+  margin: 16px auto;
+  border-radius: 12px;
+  max-width: 80%;
+  font-size: 15px;
+  line-height: 1.6;
+  font-weight: 500;
+  animation: fadeIn 0.3s ease-in-out;
+  background-size: cover;
+  background-repeat: no-repeat;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+}
+
+/* ===== Type-Based System Styles ===== */
+
+/* 🟢 Joined */
+.system.join {
+  background: linear-gradient(120deg, #e0f7e9, #c9f9d5);
+  color: #2e7d32;
+  border-left: 6px solid #66bb6a;
+  border-right: 6px solid #66bb6a;
+}
+
+/* 🔴 Left */
+.system.left {
+  background: linear-gradient(120deg, #ffe0e0, #ffd6d6);
+  color: #c62828;
+  border-left: 6px solid #ef5350;
+  border-right: 6px solid #ef5350;
+}
+
+/* 🔵 Welcome/Info */
+.system.info {
+  background: linear-gradient(120deg, #e3f2fd, #d0e2ff);
+  color: #1565c0;
+  border-left: 6px solid #42a5f5;
+  border-right: 6px solid #42a5f5;
+}
+
+/* Optional: Fade-in Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
