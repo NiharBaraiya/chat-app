@@ -38,24 +38,18 @@ let joinedRoom = "";
 
 io.on("connection", (socket) => {
   socket.on("joinRoom", ({ name, room }) => {
-    username = name || "Anonymous";
-    joinedRoom = room || "General";
-    socket.join(joinedRoom);
+    const currentUser = { name, room }; // ✅ Define it here
+    users[socket.id] = currentUser;
+    socket.join(room);
 
-    socket.to(joinedRoom).emit("message", {
-      user: "System",
-      text: `${username} joined the room`,
-      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    });
+    socket.emit("message", formatMessage("System", `Welcome ${name}!`));
+
+    socket.broadcast
+      .to(room)
+      .emit("message", formatMessage("System", `${name} joined the chat`));
   });
+});
 
-  socket.on("chatMessage", (msg) => {
-    const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    const user = typeof msg === "object" ? msg.name : username;
-    const text = typeof msg === "object" ? msg.msg : msg;
-
-    io.to(joinedRoom || socket.id).emit("message", { user, text, time });
-  });
 
   socket.on("typing", (status) => {
     const text = status ? `${username} is typing...` : "";
