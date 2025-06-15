@@ -8,6 +8,7 @@ app.use((req, res, next) => {
   res.setHeader("Cache-Control", "no-store");
   next();
 });
+console.log("Serving static files from:", path.join(__dirname, "public"));
 
 const app = express();
 const server = http.createServer(app);
