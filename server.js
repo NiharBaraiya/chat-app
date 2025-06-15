@@ -10,6 +10,17 @@ app.use((req, res, next) => {
 });
 console.log("Serving static files from:", path.join(__dirname, "public"));
 
+console.log("👀 Starting server.js...");
+
+// DISABLE CACHE
+app.use((req, res, next) => {
+  res.setHeader("Cache-Control", "no-store");
+  next();
+});
+
+// Show exact public folder
+console.log("Serving static files from:", path.join(__dirname, "public"));
+app.use(express.static(path.join(__dirname, "public")));
 const app = express();
 const server = http.createServer(app);
 const io = socketio(server);
