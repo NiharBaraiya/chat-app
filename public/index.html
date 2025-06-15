@@ -26,25 +26,26 @@
     const messages = document.getElementById("messages");
     const typing = document.getElementById("typing");
 
+    // Send just the message string
     form.addEventListener("submit", function (e) {
       e.preventDefault();
       const msg = input.value.trim();
       if (msg) {
-        socket.emit("chatMessage", { name, msg });
+        socket.emit("chatMessage", msg); // ✅ Fixed
         input.value = "";
         input.focus();
       }
     });
 
+    // Display incoming messages
     socket.on("message", (message) => {
       const li = document.createElement("li");
-    li.innerHTML = `<span class="timestamp">[${message.time}]</span> <span class="user">${message.user}</span>: ${message.text}`;
-
+      li.innerHTML = `<span class="timestamp">[${message.time}]</span> <span class="user">${message.user}</span>: ${message.text}`;
       messages.appendChild(li);
       messages.scrollTop = messages.scrollHeight;
     });
 
-    // Typing
+    // Typing indicator
     let typingTimeout;
     input.addEventListener("input", () => {
       socket.emit("typing", true);
@@ -57,6 +58,10 @@
     socket.on("typing", (text) => {
       typing.innerText = text || "";
     });
+
+    // Send name to server when connected
+    socket.emit("joinRoom", { name, room: null });
   </script>
 </body>
 </html>
+
