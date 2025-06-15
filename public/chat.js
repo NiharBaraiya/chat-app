@@ -48,3 +48,4 @@ input.addEventListener("input", () => {
 socket.on("typing", (text) => {
   typing.innerText = text || "";
 });
+
