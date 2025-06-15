@@ -169,3 +169,71 @@ button:hover {
 #chatForm button:hover {
   background-color: #2980b9;
 }
+/* Room Name Header */
+#room-name {
+  text-align: center;
+  font-size: 2rem;
+  margin-bottom: 20px;
+  color: #007bff;
+}
+
+/* Messages List */
+#messages {
+  list-style-type: none;
+  max-height: 400px;
+  overflow-y: auto;
+  margin-bottom: 10px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+#messages li {
+  margin-bottom: 12px;
+  padding: 8px 10px;
+  background: #f1f1f1;
+  border-radius: 6px;
+}
+
+#messages li strong {
+  color: #007bff;
+}
+
+/* Typing Indicator */
+#typing {
+  font-style: italic;
+  color: #888;
+  margin: 6px 0 10px 5px;
+}
+
+/* Chat Form */
+#chatForm {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+#msg {
+  flex: 1;
+  padding: 10px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+button {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+button:hover {
+  background: #0056b3;
+}
