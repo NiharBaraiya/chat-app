@@ -260,6 +260,58 @@ body {
   color: #333;
   flex: 1;
 }
+/* Container for message list */
+#messages {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 500px;
+  overflow-y: auto;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Each individual chat message */
+.chat-message {
+  display: flex;
+  align-items: baseline;
+  padding: 10px 14px;
+  margin: 8px 0;
+  background: #fefefe;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  font-size: 15px;
+  word-break: break-word;
+  animation: fadeIn 0.25s ease;
+}
+
+/* [10:33 AM] */
+.chat-message .timestamp {
+  color: #888;
+  font-size: 13px;
+  font-family: monospace;
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+
+/* Prince: */
+.chat-message .username {
+  font-weight: 600;
+  color: #007bff;
+  margin-right: 6px;
+}
+
+/* hii */
+.chat-message .text {
+  color: #222;
+  flex: 1;
+}
+
+/* Animation for appearance */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 
 /* Smooth Appearance */
 @keyframes fadeIn {
