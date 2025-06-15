@@ -32,6 +32,8 @@ form.addEventListener("submit", function (e) {
 // ✅ Receive message
 socket.on("message", (message) => {
   const li = document.createElement("li");
+
+  // Always apply base "message" class
   li.classList.add("message");
 
   if (message.user === "System") {
@@ -39,10 +41,16 @@ socket.on("message", (message) => {
     li.innerText = message.text;
   } else if (message.user === name) {
     li.classList.add("sender");
-    li.innerHTML = `<div class="meta">You • ${message.time}</div><div>${message.text}</div>`;
+    li.innerHTML = `
+      <span class="timestamp">${message.time}</span>
+      <strong>You</strong>: ${message.text}
+    `;
   } else {
     li.classList.add("receiver");
-    li.innerHTML = `<div class="meta">${message.user} • ${message.time}</div><div>${message.text}</div>`;
+    li.innerHTML = `
+      <span class="timestamp">${message.time}</span>
+      <strong>${message.user}</strong>: ${message.text}
+    `;
   }
 
   messages.appendChild(li);
