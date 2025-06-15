@@ -44,13 +44,13 @@ io.on("connection", (socket) => {
       roomUsers[room] = new Set();
     }
 
-    // ✅ Notify new user about others already in room
-    const existing = [...roomUsers[room]].filter((u) => u !== name);
+    // ✅ Get users already in room BEFORE adding new user
+    const existing = [...roomUsers[room]];
     if (existing.length > 0) {
       socket.emit("message", formatMessage("System", `${existing.join(", ")} already joined this chat.`));
     }
 
-    // ✅ Add new user to room set
+    // ✅ Now add new user to the room set
     roomUsers[room].add(name);
 
     // ✅ Welcome new user
@@ -85,7 +85,7 @@ io.on("connection", (socket) => {
     if (user) {
       socket.to(user.room).emit("message", formatMessage("System", `${user.name} left the chat.`));
       socket.to(user.room).emit("typing", "");
-      
+
       // ✅ Remove from roomUsers
       if (roomUsers[user.room]) {
         roomUsers[user.room].delete(user.name);
