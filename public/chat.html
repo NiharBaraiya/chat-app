@@ -4,20 +4,21 @@
   <meta charset="UTF-8" />
   <title>Room Chat</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="stylesheet" href="style.css" />
-
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h2 id="room-name">Room Chat</h2>
-  <ul id="messages"></ul>
-  <p id="typing"></p>
-  <form id="chatForm">
-    <input id="msg" type="text" placeholder="Your message..." required />
-    <button>Send</button>
-  </form>
+  <!-- ✅ Container for styling -->
+  <div class="chat-container">
+    <h2 id="room-name">Room Chat</h2>
+    <ul id="messages"></ul>
+    <p id="typing"></p>
+    <form id="chatForm">
+      <input id="msg" type="text" placeholder="Your message..." required />
+      <button>Send</button>
+    </form>
+  </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="chat.js"></script>
 </body>
 </html>
-
