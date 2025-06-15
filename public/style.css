@@ -116,6 +116,7 @@ body {
   color: white;
   align-self: flex-start;
   text-align: left;
+  
 }
 
 /* System Messages */
@@ -211,6 +212,59 @@ body {
 #messages::-webkit-scrollbar-thumb {
   background: #ccc;
   border-radius: 10px;
+}
+/* Container holding all messages */
+#messages {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 500px;
+  overflow-y: auto;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Each chat message */
+.chat-message {
+  display: flex;
+  align-items: baseline;
+  padding: 10px 16px;
+  margin: 6px 0;
+  background-color: #f9f9f9;
+  border-left: 4px solid #007bff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  font-size: 15px;
+  word-break: break-word;
+  animation: fadeIn 0.3s ease;
+}
+
+/* Timestamp Style */
+.chat-message .timestamp {
+  color: #999;
+  font-size: 13px;
+  margin-right: 10px;
+  min-width: 65px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* Username Style */
+.chat-message .username {
+  font-weight: 600;
+  color: #007bff;
+  margin-right: 6px;
+}
+
+/* Message Text */
+.chat-message .text {
+  color: #333;
+  flex: 1;
+}
+
+/* Smooth Appearance */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 /* ===== FADE-IN ANIMATION ===== */
