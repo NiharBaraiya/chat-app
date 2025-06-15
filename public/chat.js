@@ -32,7 +32,19 @@ form.addEventListener("submit", function (e) {
 // ✅ Receive message
 socket.on("message", (message) => {
   const li = document.createElement("li");
-  li.innerHTML = `<span class="timestamp">[${message.time}]</span> <strong>${message.user}</strong>: ${message.text}`;
+  li.classList.add("message");
+
+  if (message.user === "System") {
+    li.classList.add("system");
+    li.innerText = message.text;
+  } else if (message.user === name) {
+    li.classList.add("sender");
+    li.innerHTML = `<div class="meta">You • ${message.time}</div><div>${message.text}</div>`;
+  } else {
+    li.classList.add("receiver");
+    li.innerHTML = `<div class="meta">${message.user} • ${message.time}</div><div>${message.text}</div>`;
+  }
+
   messages.appendChild(li);
   messages.scrollTop = messages.scrollHeight;
 });
