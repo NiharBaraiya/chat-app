@@ -36,14 +36,11 @@ io.on("connection", (socket) => {
       .emit("message", formatMessage("System", `${name} joined the chat`));
   });
 
-  socket.on("chatMessage", (msg) => {
-    const sender = users[socket.id];
-    if (sender?.room) {
-      io.to(sender.room).emit("message", formatMessage(sender.name, msg));
-    } else {
-      io.emit("message", formatMessage("User", msg));
-    }
-  });
+ socket.on("chatMessage", (msg) => {
+  const sender = users[socket.id];
+  const username = sender?.name || "User";
+  io.emit("message", formatMessage(username, msg)); // ✅ Now uses Nihar
+});
 
   socket.on("typing", (isTyping) => {
     const sender = users[socket.id];
