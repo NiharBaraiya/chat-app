@@ -10,32 +10,34 @@ const messages = document.getElementById("messages");
 const typing = document.getElementById("typing");
 const roomNameElem = document.getElementById("room-name");
 
-// Join room if name and room in URL
+// ✅ Join room if name and room exist in URL
 if (name && room) {
   socket.emit("joinRoom", { name, room });
-  if (roomNameElem) roomNameElem.innerText = `${room} Room`;
+  if (roomNameElem) {
+    roomNameElem.innerText = `${room} Room`;
+  }
 }
 
-// Send message
+// ✅ Send message (only message string)
 form.addEventListener("submit", function (e) {
   e.preventDefault();
   const message = input.value.trim();
   if (message) {
-    socket.emit("chatMessage", message);
+    socket.emit("chatMessage", message); // ✅ only the message text
     input.value = "";
     input.focus();
   }
 });
 
-// Receive message
+// ✅ Receive message
 socket.on("message", (message) => {
   const li = document.createElement("li");
-  li.innerHTML = `[${message.time}] <strong>${message.user}</strong>: ${message.text}`;
+  li.innerHTML = `<span class="timestamp">[${message.time}]</span> <strong>${message.user}</strong>: ${message.text}`;
   messages.appendChild(li);
   messages.scrollTop = messages.scrollHeight;
 });
 
-// Typing
+// ✅ Typing status
 let typingTimeout;
 input.addEventListener("input", () => {
   socket.emit("typing", true);
@@ -48,4 +50,3 @@ input.addEventListener("input", () => {
 socket.on("typing", (text) => {
   typing.innerText = text || "";
 });
-
