@@ -14,14 +14,14 @@ const clearButton = document.getElementById("clearChat");
 const fileInput = document.getElementById("fileInput");
 const uploadProgress = document.getElementById("uploadProgress");
 const languageSelect = document.getElementById("languageSelect");
+let selectedLang = "hi"; // Default to Hindi
 
-// Fetch supported languages from API
 async function populateLanguages() {
   try {
     const res = await fetch("https://libretranslate.com/languages");
     const langs = await res.json();
 
-    languageSelect.innerHTML = ""; // Clear default option
+    languageSelect.innerHTML = "";
 
     langs.forEach(lang => {
       const option = document.createElement("option");
@@ -30,20 +30,21 @@ async function populateLanguages() {
       languageSelect.appendChild(option);
     });
 
-    // Restore previously selected language
-    const savedLang = localStorage.getItem("chatLang");
-    if (savedLang) languageSelect.value = savedLang;
+    // Load from localStorage or fallback
+    selectedLang = localStorage.getItem("chatLang") || "hi";
+    languageSelect.value = selectedLang;
   } catch (err) {
-    console.error("Failed to load languages", err);
+    console.error("Language load failed", err);
     languageSelect.innerHTML = `<option value="en">English</option>`;
   }
 }
 
-document.addEventListener("DOMContentLoaded", populateLanguages);
-
 languageSelect.addEventListener("change", () => {
-  localStorage.setItem("chatLang", languageSelect.value);
+  selectedLang = languageSelect.value;
+  localStorage.setItem("chatLang", selectedLang);
 });
+
+document.addEventListener("DOMContentLoaded", populateLanguages);
 
 // ✅ Join room if name and room exist
 if (name && room) {
@@ -66,16 +67,11 @@ form.addEventListener("submit", function (e) {
 
 // ✅ Receive message
 socket.on("message", async (message) => {
-  const targetLang = localStorage.getItem("chatLang") || "en";
-
   let translatedText = message.text;
 
-  if (targetLang !== "en" && message.user !== "System") {
-    try {
-      translatedText = await translateText(message.text, targetLang);
-    } catch (err) {
-      console.warn("Translation failed", err);
-    }
+  // Only translate if not system message
+  if (message.user !== "System") {
+    translatedText = await translateText(message.text, selectedLang);
   }
 
   const li = document.createElement("li");
@@ -86,7 +82,7 @@ socket.on("message", async (message) => {
     li.innerText = translatedText;
   } else if (message.user === name) {
     li.classList.add("sender");
-    li.innerHTML = `<span class="timestamp">${message.time}</span> <strong>You</strong>: ${translatedText}`;
+    li.innerHTML = `<span class="timestamp">${message.time}</span> <strong>आप</strong>: ${translatedText}`;
   } else {
     li.classList.add("receiver");
     li.innerHTML = `<span class="timestamp">${message.time}</span> <strong>${message.user}</strong>: ${translatedText}`;
@@ -95,6 +91,7 @@ socket.on("message", async (message) => {
   messages.appendChild(li);
   messages.scrollTop = messages.scrollHeight;
 });
+
 
 
 // ✅ Typing status
@@ -206,19 +203,32 @@ socket.on("fileShared", ({ user, fileName, fileData, fileType, time }) => {
   messages.scrollTop = messages.scrollHeight;
 });
 async function translateText(text, targetLang) {
-  const res = await fetch("https://libretranslate.com/translate", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      q: text,
-      source: "auto",
-      target: targetLang,
-      format: "text"
-    })
-  });
+  try {
+    const res = await fetch("https://libretranslate.com/translate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        q: text,
+        source: "auto",
+        target: targetLang,
+        format: "text"
+      })
+    });
 
-  const data = await res.json();
-  return data.translatedText;
+    const data = await res.json();
+    return data.translatedText;
+  } catch (err) {
+    console.error("Translation error", err);
+    return text; // Fallback: return original if fails
+  }
 }
+form.addEventListener("submit", async function (e) {
+  e.preventDefault();
+  const message = input.value.trim();
+  if (message) {
+    const translated = await translateText(message, selectedLang); // Translate before sending
+    socket.emit("chatMessage", translated); // Send in translated form
+    input.value = "";
+    input.focus();
+  }
+});
