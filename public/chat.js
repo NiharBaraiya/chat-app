@@ -9,6 +9,7 @@ const input = document.getElementById("msg");
 const messages = document.getElementById("messages");
 const typing = document.getElementById("typing");
 const roomNameElem = document.getElementById("room-name");
+const clearButton = document.getElementById("clearChat");
 
 // ✅ Join room if name and room exist in URL
 if (name && room) {
@@ -69,4 +70,9 @@ input.addEventListener("input", () => {
 
 socket.on("typing", (text) => {
   typing.innerText = text || "";
+});
+
+// ✅ Clear Chat functionality
+clearButton.addEventListener("click", () => {
+  messages.innerHTML = "";
 });
