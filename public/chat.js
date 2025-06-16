@@ -45,6 +45,11 @@ fetch("https://libretranslate.com/languages")
 languageSelect.addEventListener("change", () => {
   selectedLang = languageSelect.value;
   translateUI();
+
+  // 🔁 Translate current room name again
+  translateText(`${room} Room`, selectedLang).then((translatedRoom) => {
+    if (roomNameElem) roomNameElem.textContent = translatedRoom;
+  });
 });
 
 // Translate UI
@@ -111,18 +116,13 @@ async function translateText(text, targetLang) {
 // Join room
 if (name && room) {
   socket.emit("joinRoom", { name, room });
+
+  // 🔁 Translate and show only room name
   translateText(`${room} Room`, selectedLang).then((translatedRoom) => {
     if (roomNameElem) roomNameElem.textContent = translatedRoom;
   });
 
-  // Welcome Message
-  translateText(`Welcome ${name}!`, selectedLang).then((translatedWelcome) => {
-    const li = document.createElement("li");
-    li.classList.add("message", "system");
-    li.textContent = translatedWelcome;
-    messages.appendChild(li);
-    messages.scrollTop = messages.scrollHeight;
-  });
+  // 🔁 REMOVE: Duplicate client-side welcome message
 }
 
 // Submit message
@@ -154,20 +154,28 @@ socket.on("typing", (text) => {
   typing.innerText = text || "";
 });
 
-// Receive message
-socket.on("message", (message) => {
+// 🔁 Receive message and translate all incoming messages
+socket.on("message", async (message) => {
   const li = document.createElement("li");
   li.classList.add("message");
 
-  if (message.user === "System") {
+  const isSelf = message.user === name;
+  const isSystem = message.user === "System";
+
+  // 🔁 Translate only if not your own message
+  const displayText = !isSelf || isSystem
+    ? await translateText(message.text, selectedLang)
+    : message.text;
+
+  if (isSystem) {
     li.classList.add("system");
-    li.textContent = message.text;
-  } else if (message.user === name) {
+    li.textContent = displayText;
+  } else if (isSelf) {
     li.classList.add("sender");
-    li.innerHTML = `<span class="timestamp">${message.time}</span> <strong>You</strong>: ${message.text}`;
+    li.innerHTML = `<span class="timestamp">${message.time}</span> <strong>You</strong>: ${displayText}`;
   } else {
     li.classList.add("receiver");
-    li.innerHTML = `<span class="timestamp">${message.time}</span> <strong>${message.user}</strong>: ${message.text}`;
+    li.innerHTML = `<span class="timestamp">${message.time}</span> <strong>${message.user}</strong>: ${displayText}`;
   }
 
   messages.appendChild(li);
