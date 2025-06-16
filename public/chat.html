@@ -7,16 +7,16 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="chat-container" style="display: flex; gap: 20px;">
+  <div class="chat-container">
 
     <!-- ✅ Sidebar for users -->
-    <aside style="width: 200px; background: #f4f4f4; padding: 10px; border-radius: 5px;">
+    <aside class="sidebar">
       <h3>👥 Users</h3>
       <ul id="user-list"></ul>
     </aside>
 
     <!-- ✅ Chat Area -->
-    <div style="flex: 1;">
+    <div class="chat-main">
       <h2 id="room-name">Room Chat</h2>
       <ul id="messages"></ul>
       <p id="typing"></p>
@@ -24,7 +24,7 @@
       <form id="chatForm">
         <input id="msg" type="text" placeholder="Your message..." required />
         <button type="submit">Send</button>
-        <button type="button" id="clearChat" style="background-color:red; color:white;">🧹Clear Chat</button>
+        <button type="button" id="clearChat" class="clear-btn">🧹 Clear Chat</button>
       </form>
     </div>
 
