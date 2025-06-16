@@ -97,6 +97,33 @@ button#clearChat {
 button#clearChat:hover {
   background-color: #c82333;
 }
+.sidebar {
+  width: 200px;
+  background: #f4f4f4;
+  padding: 15px;
+  border-radius: 8px;
+}
+
+.sidebar h3 {
+  margin-top: 0;
+  font-size: 18px;
+}
+
+#user-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+#user-list li {
+  padding: 6px;
+  background: #ddd;
+  margin-bottom: 5px;
+  border-radius: 5px;
+}
+
+.chat-main {
+  flex: 1;
+}
 
 /* ==== ANIMATIONS ==== */
 @keyframes fadeIn {
