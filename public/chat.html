@@ -7,16 +7,27 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- ✅ Container for styling -->
-  <div class="chat-container">
-    <h2 id="room-name">Room Chat</h2>
-    <ul id="messages"></ul>
-    <p id="typing"></p>
-    <form id="chatForm">
-      <input id="msg" type="text" placeholder="Your message..." required />
-      <button type="submit">Send</button>
-      <button type="button" id="clearChat" style="background-color:red; color:white;">🧹Clear Chat</button>
-    </form>
+  <div class="chat-container" style="display: flex; gap: 20px;">
+
+    <!-- ✅ Sidebar for users -->
+    <aside style="width: 200px; background: #f4f4f4; padding: 10px; border-radius: 5px;">
+      <h3>👥 Users</h3>
+      <ul id="user-list"></ul>
+    </aside>
+
+    <!-- ✅ Chat Area -->
+    <div style="flex: 1;">
+      <h2 id="room-name">Room Chat</h2>
+      <ul id="messages"></ul>
+      <p id="typing"></p>
+
+      <form id="chatForm">
+        <input id="msg" type="text" placeholder="Your message..." required />
+        <button type="submit">Send</button>
+        <button type="button" id="clearChat" style="background-color:red; color:white;">🧹Clear Chat</button>
+      </form>
+    </div>
+
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
