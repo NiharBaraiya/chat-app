@@ -16,6 +16,129 @@ body {
   padding: 30px 20px;
   animation: fadeInBody 0.6s ease;
 }
+/* === GLOBAL RESET === */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #a8edea, #fed6e3);
+  color: #333;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+}
+
+/* === TITLE === */
+h2 {
+  color: #2563eb;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+/* === CHAT MESSAGES AREA === */
+#messages {
+  list-style: none;
+  padding: 0;
+  width: 100%;
+  max-width: 600px;
+  height: 60vh;
+  overflow-y: auto;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 12px;
+  padding: 15px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* === CHAT FORM === */
+#chatForm {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 15px;
+  width: 100%;
+  max-width: 600px;
+}
+
+#msg {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+#chatForm button {
+  background-color: #0d6efd;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+#chatForm button:hover {
+  background-color: #0a58ca;
+}
+
+/* === TYPING INDICATOR === */
+#typing {
+  margin-top: 10px;
+  font-style: italic;
+  color: #666;
+}
+
+/* === SYSTEM MESSAGE STYLE === */
+#messages li.system {
+  align-self: center;
+  background: #f0f0f0;
+  padding: 10px 16px;
+  border-radius: 10px;
+  max-width: 90%;
+  font-size: 14px;
+  color: #444;
+  white-space: pre-line; /* support \n */
+  text-align: center;
+  border-left: 4px solid #999;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+/* === CHAT MESSAGE STYLE === */
+#messages li {
+  position: relative;
+  padding: 10px 16px;
+  background: #fff;
+  border-radius: 12px;
+  max-width: 80%;
+  word-wrap: break-word;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+#messages li:hover {
+  background: #f9f9f9;
+}
+
+/* === MESSAGE TEXT === */
+#messages li .timestamp {
+  font-size: 12px;
+  color: #777;
+  margin-right: 6px;
+}
+
+#messages li .user {
+  font-weight: 600;
+  color: #222;
+}
 
 /* ==== SHARED CONTAINER ==== */
 .join-container,
