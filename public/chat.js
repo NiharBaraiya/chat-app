@@ -10,258 +10,160 @@ const messages = document.getElementById("messages");
 const typing = document.getElementById("typing");
 const roomNameElem = document.getElementById("room-name");
 const userList = document.getElementById("user-list");
-const clearButton = document.getElementById("clearChat");
+const clearBtn = document.getElementById("clearChat");
 const fileInput = document.getElementById("fileInput");
 const uploadProgress = document.getElementById("uploadProgress");
 const languageSelect = document.getElementById("language");
-const form = document.getElementById("chatForm");
-const msgInput = document.getElementById("msg");
-const messages = document.getElementById("messages");
-const sendBtn = document.getElementById("sendBtn");
-const clearBtn = document.getElementById("clearBtn");
 
-let selectedLang = "hi"; // default to Hindi
+let selectedLang = "hi"; // Default translation language
 
-const languageSelect = document.getElementById("language");
-
-// ✅ Add temporary "Loading..." option
+// Add and clear temporary Loading option
 const loadingOption = document.createElement("option");
-loadingOption.value = "";
 loadingOption.textContent = "🌐 Loading languages...";
-languageSelect.appendChild(loadingOption);
+languageSelect.append(loadingOption);
 
-// ✅ Fetch languages from LibreTranslate
 fetch("https://libretranslate.com/languages")
-  .then((res) => res.json())
-  .then((languages) => {
-    languageSelect.innerHTML = ""; // Clear "Loading..." option
-
-    languages.forEach((lang) => {
-      const option = document.createElement("option");
-      option.value = lang.code;
-      option.textContent = lang.name;
-      languageSelect.appendChild(option);
-    });
-
-    // Set default language
-    languageSelect.value = "hi";
-    translateUI(); // Translate UI initially
-  })
-  .catch((err) => {
-    console.error("Failed to load languages:", err);
+  .then(r => r.json())
+  .then(langs => {
     languageSelect.innerHTML = "";
-    const errorOption = document.createElement("option");
-    errorOption.value = "";
-    errorOption.textContent = "❌ Failed to load languages";
-    languageSelect.appendChild(errorOption);
+    langs.forEach(l => {
+      const o = document.createElement("option");
+      o.value = l.code;
+      o.textContent = l.name;
+      languageSelect.append(o);
+    });
+    languageSelect.value = selectedLang;
+    translateUI();
+  })
+  .catch(() => {
+    languageSelect.innerHTML = "";
+    const o = document.createElement("option");
+    o.textContent = "❌ Failed to load languages";
+    languageSelect.append(o);
   });
 
+languageSelect.addEventListener("change", () => {
+  selectedLang = languageSelect.value;
+  translateUI();
+});
 
-// ✅ Translate UI dynamically
 function translateUI() {
-  const elementsToTranslate = {
-    title: "Multi-language Chat",
-    languageLabel: "Select Language:",
+  const mapping = {
     sendBtn: "Send",
-    clearBtn: "Clear Chat",
-    msg: "Type your message..."
+    clearChat: "Clear Chat",
+    msg: "Type your message...",
   };
-
-  for (let id in elementsToTranslate) {
-    translateText(elementsToTranslate[id], selectedLang).then((translated) => {
-      if (id === "msg") {
-        msgInput.placeholder = translated;
-      } else {
-        const el = document.getElementById(id);
-        if (el) el.textContent = translated;
-      }
+  Object.entries(mapping).forEach(([id, text]) => {
+    translateText(text, selectedLang).then(trans => {
+      if (id === "msg") input.placeholder = trans;
+      else if (id === "sendBtn") form.querySelector("button[type=submit]").textContent = trans;
+      else if (id === "clearChat") clearBtn.textContent = trans;
     });
-  }
+  });
 }
 
-// ✅ Submit message
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const originalText = msgInput.value.trim();
-  if (!originalText) return;
-
-  const translated = await translateText(originalText, selectedLang);
-  const li = document.createElement("li");
-  li.textContent = translated;
-  messages.appendChild(li);
-  msgInput.value = "";
-});
-
-// ✅ Clear chat
-clearBtn.addEventListener("click", () => {
-  messages.innerHTML = "";
-});
-
-// ✅ Translate using LibreTranslate
-async function translateText(text, targetLang) {
+async function translateText(q, target) {
+  if (!target) return q;
   try {
     const res = await fetch("https://libretranslate.com/translate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        q: text,
-        source: "auto",
-        target: targetLang,
-        format: "text"
-      })
+      body: JSON.stringify({ q, source: "auto", target, format: "text" })
     });
-    const data = await res.json();
-    return data.translatedText;
-  } catch (err) {
-    console.error("Translation failed:", err);
-    return text;
+    const d = await res.json();
+    return d.translatedText;
+  } catch {
+    return q;
   }
 }
 
-// ✅ Join room if name and room exist
 if (name && room) {
   socket.emit("joinRoom", { name, room });
-  if (roomNameElem) {
-    roomNameElem.innerText = `${room} Room`;
-  }
+  roomNameElem.innerText = `${room} Room`;
 }
 
-// ✅ Send message
-form.addEventListener("submit", function (e) {
+form.addEventListener("submit", async e => {
   e.preventDefault();
-  const message = input.value.trim();
-  if (message) {
-    socket.emit("chatMessage", message);
-    input.value = "";
-    input.focus();
-  }
+  const text = input.value.trim();
+  if (!text) return;
+  const translated = await translateText(text, selectedLang);
+  socket.emit("chatMessage", translated);
+  input.value = "";
 });
 
-// ✅ Receive message
-socket.on("message", (message) => {
+// Handle incoming chat messages
+socket.on("message", m => {
   const li = document.createElement("li");
-  li.classList.add("message");
-
-  if (message.user === "System") {
+  li.className = "message";
+  if (m.user === "System") {
     li.classList.add("system");
-    li.innerText = message.text;
-  } else if (message.user === name) {
-    li.classList.add("sender");
-    li.innerHTML = `<span class="timestamp">${message.time}</span> <strong>You</strong>: ${message.text}`;
+    li.innerText = m.text;
   } else {
-    li.classList.add("receiver");
-    li.innerHTML = `<span class="timestamp">${message.time}</span> <strong>${message.user}</strong>: ${message.text}`;
+    const side = m.user === name ? "sender" : "receiver";
+    li.classList.add(side);
+    li.innerHTML = `<span class="timestamp">${m.time}</span> <strong>${side==='sender'?'You':m.user}</strong>: ${m.text}`;
   }
-
-  messages.appendChild(li);
+  messages.append(li);
   messages.scrollTop = messages.scrollHeight;
 });
 
-// ✅ Typing status
+// Typing indicator
 let typingTimeout;
 input.addEventListener("input", () => {
   socket.emit("typing", true);
   clearTimeout(typingTimeout);
-  typingTimeout = setTimeout(() => {
-    socket.emit("typing", false);
-  }, 1000);
+  typingTimeout = setTimeout(() => socket.emit("typing", false), 1000);
 });
+socket.on("typing", text => typing.innerText = text);
 
-socket.on("typing", (text) => {
-  typing.innerText = text || "";
-});
+// Clear chat
+clearBtn.addEventListener("click", () => messages.innerHTML = "");
 
-// ✅ Clear chat button
-clearButton.addEventListener("click", () => {
-  messages.innerHTML = "";
-});
-
-// ✅ Update user list
+// User list updates
 socket.on("roomUsers", ({ users }) => {
   userList.innerHTML = "";
-  users.forEach((user) => {
+  users.forEach(u => {
     const li = document.createElement("li");
-    li.textContent = user.name;
-    userList.appendChild(li);
+    li.textContent = u.name;
+    userList.append(li);
   });
 });
 
-// ✅ File Upload
+// File upload and sharing
 fileInput?.addEventListener("change", () => {
-  const file = fileInput.files[0];
-  if (!file) return;
-
-  const maxSize = 5 * 1024 * 1024; // 5MB
-  if (file.size > maxSize) {
-    alert("❌ File too large. Max 5MB allowed.");
-    return;
-  }
-
+  const f = fileInput.files[0];
+  if (!f || f.size > 5*1024*1024) return alert("Max size 5MB");
   const reader = new FileReader();
-  reader.onloadstart = () => {
-    uploadProgress.style.display = "block";
-    uploadProgress.value = 0;
-  };
-  reader.onprogress = (e) => {
-    if (e.lengthComputable) {
-      const percent = (e.loaded / e.total) * 100;
-      uploadProgress.value = percent;
-    }
-  };
+  reader.onloadstart = () => { uploadProgress.style.display = "block"; uploadProgress.value = 0; };
+  reader.onprogress = e => { if (e.lengthComputable) uploadProgress.value = e.loaded/e.total*100; };
   reader.onload = () => {
-    const base64 = reader.result;
-    socket.emit("fileUpload", {
-      fileName: file.name,
-      fileData: base64,
-      fileType: file.type,
-    });
+    socket.emit("fileUpload", { fileName: f.name, fileData: reader.result, fileType: f.type });
     uploadProgress.style.display = "none";
     fileInput.value = "";
   };
-  reader.readAsDataURL(file);
+  reader.readAsDataURL(f);
 });
 
-// ✅ Receive file in chat
-socket.on("fileShared", ({ user, fileName, fileData, fileType, time }) => {
+// Receiving shared files
+socket.on("fileShared", data => {
+  const { user, fileName, fileData, fileType, time } = data;
   const li = document.createElement("li");
-  li.classList.add("message", user === name ? "sender" : "receiver");
+  li.className = "message " + (user === name ? "sender":"receiver");
 
   const blob = new Blob([Uint8Array.from(atob(fileData.split(',')[1]), c => c.charCodeAt(0))], { type: fileType });
-  const downloadUrl = URL.createObjectURL(blob);
+  const url = URL.createObjectURL(blob);
+  const ext = fileName.split('.').pop().toLowerCase();
+  const icons = { pdf:"📄", doc:"📝", docx:"📝", txt:"📃", jpg:"🖼️", jpeg:"🖼️", png:"🖼️", gif:"🖼️", default:"📁" };
+  const icon = icons[ext] || icons.default;
 
-  let content = "";
-  const fileExt = fileName.split('.').pop().toLowerCase();
-
-  const fileIcons = {
-    pdf: "📄",
-    doc: "📝",
-    docx: "📝",
-    txt: "📃",
-    jpg: "🖼️",
-    jpeg: "🖼️",
-    png: "🖼️",
-    gif: "🖼️",
-    zip: "🗜️",
-    mp4: "🎥",
-    mp3: "🎵",
-    default: "📁"
-  };
-
-  const icon = fileIcons[fileExt] || fileIcons.default;
-
+  let html;
   if (fileType.startsWith("image/")) {
-    content = `
-      <a href="${downloadUrl}" download="${fileName}" target="_blank">
-        <img src="${downloadUrl}" alt="${fileName}" class="shared-img" />
-      </a>`;
+    html = `<a href="${url}" download="${fileName}"><img src="${url}" class="shared-img"></a>`;
   } else {
-    content = `<a href="${downloadUrl}" download="${fileName}" class="file-link">${icon} ${fileName}</a>`;
+    html = `<a href="${url}" download="${fileName}">${icon} ${fileName}</a>`;
   }
 
-  li.innerHTML = `
-    <span class="timestamp">${time}</span> <strong>${user === name ? "You" : user}</strong>: ${content}
-  `;
-
-  messages.appendChild(li);
+  li.innerHTML = `<span class="timestamp">${time}</span> <strong>${user===name?'You':user}</strong>: ${html}`;
+  messages.append(li);
   messages.scrollTop = messages.scrollHeight;
 });
