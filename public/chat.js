@@ -13,38 +13,94 @@ const userList = document.getElementById("user-list");
 const clearButton = document.getElementById("clearChat");
 const fileInput = document.getElementById("fileInput");
 const uploadProgress = document.getElementById("uploadProgress");
-const languageSelect = document.getElementById("languageSelect");
-let selectedLang = "hi"; // Default to Hindi
+const languageSelect = document.getElementById("language");
+const form = document.getElementById("chatForm");
+const msgInput = document.getElementById("msg");
+const messages = document.getElementById("messages");
+const sendBtn = document.getElementById("sendBtn");
+const clearBtn = document.getElementById("clearBtn");
 
-async function populateLanguages() {
-  try {
-    const res = await fetch("https://libretranslate.com/languages");
-    const langs = await res.json();
+let selectedLang = "hi"; // default to Hindi
 
-    languageSelect.innerHTML = "";
-
-    langs.forEach(lang => {
+// ✅ Dynamically load languages from LibreTranslate
+fetch("https://libretranslate.com/languages")
+  .then((res) => res.json())
+  .then((languages) => {
+    languages.forEach((lang) => {
       const option = document.createElement("option");
       option.value = lang.code;
       option.textContent = lang.name;
       languageSelect.appendChild(option);
     });
-
-    // Load from localStorage or fallback
-    selectedLang = localStorage.getItem("chatLang") || "hi";
     languageSelect.value = selectedLang;
-  } catch (err) {
-    console.error("Language load failed", err);
-    languageSelect.innerHTML = `<option value="en">English</option>`;
-  }
-}
+    translateUI(); // Initial UI translation
+  });
 
 languageSelect.addEventListener("change", () => {
   selectedLang = languageSelect.value;
-  localStorage.setItem("chatLang", selectedLang);
+  translateUI();
 });
 
-document.addEventListener("DOMContentLoaded", populateLanguages);
+// ✅ Translate UI dynamically
+function translateUI() {
+  const elementsToTranslate = {
+    title: "Multi-language Chat",
+    languageLabel: "Select Language:",
+    sendBtn: "Send",
+    clearBtn: "Clear Chat",
+    msg: "Type your message..."
+  };
+
+  for (let id in elementsToTranslate) {
+    translateText(elementsToTranslate[id], selectedLang).then((translated) => {
+      if (id === "msg") {
+        msgInput.placeholder = translated;
+      } else {
+        const el = document.getElementById(id);
+        if (el) el.textContent = translated;
+      }
+    });
+  }
+}
+
+// ✅ Submit message
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const originalText = msgInput.value.trim();
+  if (!originalText) return;
+
+  const translated = await translateText(originalText, selectedLang);
+  const li = document.createElement("li");
+  li.textContent = translated;
+  messages.appendChild(li);
+  msgInput.value = "";
+});
+
+// ✅ Clear chat
+clearBtn.addEventListener("click", () => {
+  messages.innerHTML = "";
+});
+
+// ✅ Translate using LibreTranslate
+async function translateText(text, targetLang) {
+  try {
+    const res = await fetch("https://libretranslate.com/translate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        q: text,
+        source: "auto",
+        target: targetLang,
+        format: "text"
+      })
+    });
+    const data = await res.json();
+    return data.translatedText;
+  } catch (err) {
+    console.error("Translation failed:", err);
+    return text;
+  }
+}
 
 // ✅ Join room if name and room exist
 if (name && room) {
@@ -66,33 +122,24 @@ form.addEventListener("submit", function (e) {
 });
 
 // ✅ Receive message
-socket.on("message", async (message) => {
-  let translatedText = message.text;
-
-  // Only translate if not system message
-  if (message.user !== "System") {
-    translatedText = await translateText(message.text, selectedLang);
-  }
-
+socket.on("message", (message) => {
   const li = document.createElement("li");
   li.classList.add("message");
 
   if (message.user === "System") {
     li.classList.add("system");
-    li.innerText = translatedText;
+    li.innerText = message.text;
   } else if (message.user === name) {
     li.classList.add("sender");
-    li.innerHTML = `<span class="timestamp">${message.time}</span> <strong>आप</strong>: ${translatedText}`;
+    li.innerHTML = `<span class="timestamp">${message.time}</span> <strong>You</strong>: ${message.text}`;
   } else {
     li.classList.add("receiver");
-    li.innerHTML = `<span class="timestamp">${message.time}</span> <strong>${message.user}</strong>: ${translatedText}`;
+    li.innerHTML = `<span class="timestamp">${message.time}</span> <strong>${message.user}</strong>: ${message.text}`;
   }
 
   messages.appendChild(li);
   messages.scrollTop = messages.scrollHeight;
 });
-
-
 
 // ✅ Typing status
 let typingTimeout;
@@ -201,34 +248,4 @@ socket.on("fileShared", ({ user, fileName, fileData, fileType, time }) => {
 
   messages.appendChild(li);
   messages.scrollTop = messages.scrollHeight;
-});
-async function translateText(text, targetLang) {
-  try {
-    const res = await fetch("https://libretranslate.com/translate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        q: text,
-        source: "auto",
-        target: targetLang,
-        format: "text"
-      })
-    });
-
-    const data = await res.json();
-    return data.translatedText;
-  } catch (err) {
-    console.error("Translation error", err);
-    return text; // Fallback: return original if fails
-  }
-}
-form.addEventListener("submit", async function (e) {
-  e.preventDefault();
-  const message = input.value.trim();
-  if (message) {
-    const translated = await translateText(message, selectedLang); // Translate before sending
-    socket.emit("chatMessage", translated); // Send in translated form
-    input.value = "";
-    input.focus();
-  }
 });
