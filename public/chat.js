@@ -1,3 +1,4 @@
+
 const socket = io();
 
 const urlParams = new URLSearchParams(window.location.search);
@@ -13,168 +14,66 @@ const userList = document.getElementById("user-list");
 const clearButton = document.getElementById("clearChat");
 const fileInput = document.getElementById("fileInput");
 const uploadProgress = document.getElementById("uploadProgress");
-const languageSelect = document.getElementById("languageSelect");
 
-let selectedLang = "hi";
-
-// 🌐 Load languages from LibreTranslate
-const loadingOption = document.createElement("option");
-loadingOption.value = "";
-loadingOption.textContent = "🌐 Loading languages...";
-languageSelect.innerHTML = "";
-languageSelect.appendChild(loadingOption);
-
-fetch("https://libretranslate.com/languages")
-  .then((res) => res.json())
-  .then((languages) => {
-    languageSelect.innerHTML = "";
-    languages.forEach((lang) => {
-      const option = document.createElement("option");
-      option.value = lang.code;
-      option.textContent = lang.name;
-      languageSelect.appendChild(option);
-    });
-    languageSelect.value = selectedLang;
-    translateUI();
-  })
-  .catch((err) => {
-    console.error("Failed to load languages", err);
-    languageSelect.innerHTML = "<option value=''>❌ Language load error</option>";
-  });
-
-languageSelect.addEventListener("change", () => {
-  selectedLang = languageSelect.value;
-  translateUI();
-  translateText(`${room} Room`, selectedLang).then((translatedRoom) => {
-    if (roomNameElem) roomNameElem.textContent = translatedRoom;
-  });
-});
-
-// 🈯 Translate UI elements
-function translateUI() {
-  const elementsToTranslate = {
-    roomName: "Room Chat",
-    msg: "Your message...",
-    clearChat: "Clear Chat",
-    chatFormBtn: "Send",
-    typing: "",
-    uploadLabel: "Send File:",
-    sidebarTitle: "Users List"
-  };
-
-  for (const [id, text] of Object.entries(elementsToTranslate)) {
-    translateText(text, selectedLang).then((translated) => {
-      const safeText = translated || text;
-      switch (id) {
-        case "msg":
-          input.placeholder = safeText;
-          break;
-        case "chatFormBtn":
-          form.querySelector("button[type='submit']").textContent = safeText;
-          break;
-        case "clearChat":
-          clearButton.textContent = `🧹 ${safeText}`;
-          break;
-        case "roomName":
-          if (roomNameElem) roomNameElem.textContent = safeText;
-          break;
-        case "typing":
-          if (typing) typing.textContent = safeText;
-          break;
-        case "uploadLabel":
-          const label = document.querySelector("label[for='fileInput']");
-          if (label) label.textContent = `📁 ${safeText}`;
-          break;
-        case "sidebarTitle":
-          const sidebarTitle = document.querySelector(".sidebar h3");
-          if (sidebarTitle) sidebarTitle.textContent = `👥 ${safeText}`;
-          break;
-      }
-    });
-  }
-}
-
-// 🌐 Translate message text using LibreTranslate
-async function translateText(text, targetLang) {
-  if (!text || !targetLang) return text;
-  try {
-    const res = await fetch("https://libretranslate.com/translate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ q: text, source: "auto", target: targetLang, format: "text" })
-    });
-    const data = await res.json();
-    return data.translatedText || text;
-  } catch (err) {
-    console.error("Translation failed:", err);
-    return text;
-  }
-}
-
-// ✅ Join the chat room
+// ✅ Join room if name and room exist
 if (name && room) {
   socket.emit("joinRoom", { name, room });
-  translateText(`${room} Room`, selectedLang).then((translatedRoom) => {
-    if (roomNameElem) roomNameElem.textContent = translatedRoom;
-  });
+  if (roomNameElem) {
+    roomNameElem.innerText = `${room} Room`;
+  }
 }
 
-// 📨 Send message
-form.addEventListener("submit", (e) => {
+// ✅ Send message
+form.addEventListener("submit", function (e) {
   e.preventDefault();
-  const originalText = input.value.trim();
-  if (!originalText) return;
-
-  socket.emit("chatMessage", originalText);
-  input.value = "";
-  input.focus();
+  const message = input.value.trim();
+  if (message) {
+    socket.emit("chatMessage", message);
+    input.value = "";
+    input.focus();
+  }
 });
 
-// 🧹 Clear chat
-clearButton.addEventListener("click", () => {
-  messages.innerHTML = "";
-});
-
-// ✍️ Typing indicator
-let typingTimeout;
-input.addEventListener("input", () => {
-  socket.emit("typing", true);
-  clearTimeout(typingTimeout);
-  typingTimeout = setTimeout(() => socket.emit("typing", false), 1000);
-});
-
-socket.on("typing", (text) => {
-  typing.innerText = text || "";
-});
-
-// 📥 Receive message
-socket.on("message", async (message) => {
+// ✅ Receive message
+socket.on("message", (message) => {
   const li = document.createElement("li");
   li.classList.add("message");
 
-  const isSelf = message.user === name;
-  const isSystem = message.user === "System";
-
-  const displayText = !isSelf || isSystem
-    ? await translateText(message.text, selectedLang)
-    : message.text;
-
-  if (isSystem) {
+  if (message.user === "System") {
     li.classList.add("system");
-    li.textContent = displayText;
-  } else if (isSelf) {
+    li.innerText = message.text;
+  } else if (message.user === name) {
     li.classList.add("sender");
-    li.innerHTML = `<span class="timestamp">${message.time}</span> <strong>You</strong>: ${displayText}`;
+    li.innerHTML = `<span class="timestamp">${message.time}</span> <strong>You</strong>: ${message.text}`;
   } else {
     li.classList.add("receiver");
-    li.innerHTML = `<span class="timestamp">${message.time}</span> <strong>${message.user}</strong>: ${displayText}`;
+    li.innerHTML = `<span class="timestamp">${message.time}</span> <strong>${message.user}</strong>: ${message.text}`;
   }
 
   messages.appendChild(li);
   messages.scrollTop = messages.scrollHeight;
 });
 
-// 🧑‍🤝‍🧑 Update user list
+// ✅ Typing status
+let typingTimeout;
+input.addEventListener("input", () => {
+  socket.emit("typing", true);
+  clearTimeout(typingTimeout);
+  typingTimeout = setTimeout(() => {
+    socket.emit("typing", false);
+  }, 1000);
+});
+
+socket.on("typing", (text) => {
+  typing.innerText = text || "";
+});
+
+// ✅ Clear chat button
+clearButton.addEventListener("click", () => {
+  messages.innerHTML = "";
+});
+
+// ✅ Update user list
 socket.on("roomUsers", ({ users }) => {
   userList.innerHTML = "";
   users.forEach((user) => {
@@ -184,12 +83,12 @@ socket.on("roomUsers", ({ users }) => {
   });
 });
 
-// 📤 File upload
+// ✅ File Upload
 fileInput?.addEventListener("change", () => {
   const file = fileInput.files[0];
   if (!file) return;
 
-  const maxSize = 5 * 1024 * 1024;
+  const maxSize = 5 * 1024 * 1024; // 5MB
   if (file.size > maxSize) {
     alert("❌ File too large. Max 5MB allowed.");
     return;
@@ -202,14 +101,16 @@ fileInput?.addEventListener("change", () => {
   };
   reader.onprogress = (e) => {
     if (e.lengthComputable) {
-      uploadProgress.value = (e.loaded / e.total) * 100;
+      const percent = (e.loaded / e.total) * 100;
+      uploadProgress.value = percent;
     }
   };
   reader.onload = () => {
+    const base64 = reader.result;
     socket.emit("fileUpload", {
       fileName: file.name,
-      fileData: reader.result,
-      fileType: file.type
+      fileData: base64,
+      fileType: file.type,
     });
     uploadProgress.style.display = "none";
     fileInput.value = "";
@@ -217,31 +118,47 @@ fileInput?.addEventListener("change", () => {
   reader.readAsDataURL(file);
 });
 
-// 📁 Receive file
+// ✅ Receive file in chat
 socket.on("fileShared", ({ user, fileName, fileData, fileType, time }) => {
   const li = document.createElement("li");
   li.classList.add("message", user === name ? "sender" : "receiver");
 
-  const blob = new Blob(
-    [Uint8Array.from(atob(fileData.split(',')[1]), c => c.charCodeAt(0))],
-    { type: fileType }
-  );
+  const blob = new Blob([Uint8Array.from(atob(fileData.split(',')[1]), c => c.charCodeAt(0))], { type: fileType });
   const downloadUrl = URL.createObjectURL(blob);
 
-  const iconMap = {
-    pdf: "📄", doc: "📝", docx: "📝", txt: "📃",
-    jpg: "🖼️", jpeg: "🖼️", png: "🖼️", gif: "🖼️",
-    zip: "🗜️", mp4: "🎥", mp3: "🎵", default: "📁"
+  let content = "";
+  const fileExt = fileName.split('.').pop().toLowerCase();
+
+  const fileIcons = {
+    pdf: "📄",
+    doc: "📝",
+    docx: "📝",
+    txt: "📃",
+    jpg: "🖼️",
+    jpeg: "🖼️",
+    png: "🖼️",
+    gif: "🖼️",
+    zip: "🗜️",
+    mp4: "🎥",
+    mp3: "🎵",
+    default: "📁"
   };
 
-  const ext = fileName.split(".").pop().toLowerCase();
-  const icon = iconMap[ext] || iconMap.default;
+  const icon = fileIcons[fileExt] || fileIcons.default;
 
-  const content = fileType.startsWith("image/")
-    ? `<a href="${downloadUrl}" download="${fileName}" target="_blank"><img src="${downloadUrl}" class="shared-img" alt="${fileName}" /></a>`
-    : `<a href="${downloadUrl}" download="${fileName}" class="file-link">${icon} ${fileName}</a>`;
+  if (fileType.startsWith("image/")) {
+    content = `
+      <a href="${downloadUrl}" download="${fileName}" target="_blank">
+        <img src="${downloadUrl}" alt="${fileName}" class="shared-img" />
+      </a>`;
+  } else {
+    content = `<a href="${downloadUrl}" download="${fileName}" class="file-link">${icon} ${fileName}</a>`;
+  }
 
-  li.innerHTML = `<span class="timestamp">${time}</span> <strong>${user === name ? "You" : user}</strong>: ${content}`;
+  li.innerHTML = `
+    <span class="timestamp">${time}</span> <strong>${user === name ? "You" : user}</strong>: ${content}
+  `;
+
   messages.appendChild(li);
   messages.scrollTop = messages.scrollHeight;
 });
