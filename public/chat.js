@@ -15,95 +15,89 @@ const fileInput = document.getElementById("fileInput");
 const uploadProgress = document.getElementById("uploadProgress");
 const languageSelect = document.getElementById("language");
 
-let selectedLang = "hi"; // Default translation language
+let selectedLang = "hi";
 
-// Add and clear temporary Loading option
-const loadingOption = document.createElement("option");
-loadingOption.textContent = "🌐 Loading languages...";
-languageSelect.append(loadingOption);
+// Initial "Loading..." dropdown
+languageSelect.innerHTML = `<option selected disabled>🌐 Loading...</option>`;
 
+// Load dynamic language list from LibreTranslate
 fetch("https://libretranslate.com/languages")
-  .then(r => r.json())
-  .then(langs => {
-    languageSelect.innerHTML = "";
-    langs.forEach(l => {
-      const o = document.createElement("option");
-      o.value = l.code;
-      o.textContent = l.name;
-      languageSelect.append(o);
+  .then(res => res.json())
+  .then(languages => {
+    languageSelect.innerHTML = ""; // Clear old loading option
+    languages.forEach(lang => {
+      const option = document.createElement("option");
+      option.value = lang.code;
+      option.textContent = lang.name;
+      languageSelect.appendChild(option);
     });
     languageSelect.value = selectedLang;
     translateUI();
   })
   .catch(() => {
-    languageSelect.innerHTML = "";
-    const o = document.createElement("option");
-    o.textContent = "❌ Failed to load languages";
-    languageSelect.append(o);
+    languageSelect.innerHTML = `<option disabled selected>❌ Failed to load</option>`;
   });
 
+// Change language on select
 languageSelect.addEventListener("change", () => {
   selectedLang = languageSelect.value;
   translateUI();
 });
 
-function translateUI() {
-  const mapping = {
-    sendBtn: "Send",
-    clearChat: "Clear Chat",
-    msg: "Type your message...",
-  };
-  Object.entries(mapping).forEach(([id, text]) => {
-    translateText(text, selectedLang).then(trans => {
-      if (id === "msg") input.placeholder = trans;
-      else if (id === "sendBtn") form.querySelector("button[type=submit]").textContent = trans;
-      else if (id === "clearChat") clearBtn.textContent = trans;
-    });
-  });
-}
-
 async function translateText(q, target) {
-  if (!target) return q;
+  if (!q || !target) return q;
   try {
-    const res = await fetch("https://libretranslate.com/translate", {
+    const response = await fetch("https://libretranslate.com/translate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ q, source: "auto", target, format: "text" })
+      body: JSON.stringify({ q, source: "auto", target, format: "text" }),
     });
-    const d = await res.json();
-    return d.translatedText;
+    const data = await response.json();
+    return data.translatedText;
   } catch {
     return q;
   }
 }
 
-if (name && room) {
-  socket.emit("joinRoom", { name, room });
-  roomNameElem.innerText = `${room} Room`;
+// UI translations
+function translateUI() {
+  const items = [
+    { selector: "#msg", attr: "placeholder", text: "Your message..." },
+    { selector: "#sendBtn", attr: "text", text: "Send" },
+    { selector: "#clearChat", attr: "text", text: "Clear Chat" },
+    { selector: "#fileLabel", attr: "text", text: "Send File:" },
+    { selector: "#room-name", attr: "text", text: `${room} Room` },
+    { selector: ".users-title", attr: "text", text: "Users List" },
+  ];
+
+  items.forEach(async item => {
+    const translated = await translateText(item.text, selectedLang);
+    const el = document.querySelector(item.selector);
+    if (!el) return;
+    if (item.attr === "text") el.textContent = translated;
+    else if (item.attr === "placeholder") el.placeholder = translated;
+  });
 }
 
+// Send Message
 form.addEventListener("submit", async e => {
   e.preventDefault();
-  const text = input.value.trim();
-  if (!text) return;
-  const translated = await translateText(text, selectedLang);
+  const msg = input.value.trim();
+  if (!msg) return;
+  const translated = await translateText(msg, selectedLang);
   socket.emit("chatMessage", translated);
   input.value = "";
 });
 
-// Handle incoming chat messages
+// Display Message
 socket.on("message", m => {
   const li = document.createElement("li");
   li.className = "message";
-  if (m.user === "System") {
-    li.classList.add("system");
-    li.innerText = m.text;
-  } else {
-    const side = m.user === name ? "sender" : "receiver";
-    li.classList.add(side);
-    li.innerHTML = `<span class="timestamp">${m.time}</span> <strong>${side==='sender'?'You':m.user}</strong>: ${m.text}`;
-  }
-  messages.append(li);
+  const isYou = m.user === name;
+  li.classList.add(isYou ? "sender" : "receiver");
+
+  li.innerHTML = `<span class="timestamp">${m.time}</span> <strong>${isYou ? "You" : m.user}</strong>: ${m.text}`;
+  messages.appendChild(li);
   messages.scrollTop = messages.scrollHeight;
 });
 
@@ -114,56 +108,63 @@ input.addEventListener("input", () => {
   clearTimeout(typingTimeout);
   typingTimeout = setTimeout(() => socket.emit("typing", false), 1000);
 });
-socket.on("typing", text => typing.innerText = text);
+socket.on("typing", txt => typing.innerText = txt);
 
-// Clear chat
+// Clear Chat
 clearBtn.addEventListener("click", () => messages.innerHTML = "");
 
-// User list updates
-socket.on("roomUsers", ({ users }) => {
-  userList.innerHTML = "";
-  users.forEach(u => {
-    const li = document.createElement("li");
-    li.textContent = u.name;
-    userList.append(li);
-  });
-});
-
-// File upload and sharing
+// File Upload
 fileInput?.addEventListener("change", () => {
   const f = fileInput.files[0];
-  if (!f || f.size > 5*1024*1024) return alert("Max size 5MB");
+  if (!f || f.size > 5 * 1024 * 1024) return alert("Max 5MB");
+
   const reader = new FileReader();
   reader.onloadstart = () => { uploadProgress.style.display = "block"; uploadProgress.value = 0; };
-  reader.onprogress = e => { if (e.lengthComputable) uploadProgress.value = e.loaded/e.total*100; };
+  reader.onprogress = e => { if (e.lengthComputable) uploadProgress.value = e.loaded / e.total * 100; };
   reader.onload = () => {
-    socket.emit("fileUpload", { fileName: f.name, fileData: reader.result, fileType: f.type });
+    socket.emit("fileUpload", {
+      fileName: f.name,
+      fileData: reader.result,
+      fileType: f.type,
+    });
     uploadProgress.style.display = "none";
     fileInput.value = "";
   };
   reader.readAsDataURL(f);
 });
 
-// Receiving shared files
+// Display uploaded file
 socket.on("fileShared", data => {
   const { user, fileName, fileData, fileType, time } = data;
   const li = document.createElement("li");
-  li.className = "message " + (user === name ? "sender":"receiver");
+  const isYou = user === name;
+  li.className = "message " + (isYou ? "sender" : "receiver");
 
   const blob = new Blob([Uint8Array.from(atob(fileData.split(',')[1]), c => c.charCodeAt(0))], { type: fileType });
   const url = URL.createObjectURL(blob);
-  const ext = fileName.split('.').pop().toLowerCase();
-  const icons = { pdf:"📄", doc:"📝", docx:"📝", txt:"📃", jpg:"🖼️", jpeg:"🖼️", png:"🖼️", gif:"🖼️", default:"📁" };
-  const icon = icons[ext] || icons.default;
 
-  let html;
   if (fileType.startsWith("image/")) {
-    html = `<a href="${url}" download="${fileName}"><img src="${url}" class="shared-img"></a>`;
+    li.innerHTML = `<span class="timestamp">${time}</span> <strong>${isYou ? "You" : user}</strong>: <a href="${url}" download="${fileName}"><img src="${url}" class="shared-img"></a>`;
   } else {
-    html = `<a href="${url}" download="${fileName}">${icon} ${fileName}</a>`;
+    li.innerHTML = `<span class="timestamp">${time}</span> <strong>${isYou ? "You" : user}</strong>: <a href="${url}" download="${fileName}">📎 ${fileName}</a>`;
   }
 
-  li.innerHTML = `<span class="timestamp">${time}</span> <strong>${user===name?'You':user}</strong>: ${html}`;
-  messages.append(li);
+  messages.appendChild(li);
   messages.scrollTop = messages.scrollHeight;
 });
+
+// User list
+socket.on("roomUsers", ({ users }) => {
+  userList.innerHTML = "";
+  users.forEach(u => {
+    const li = document.createElement("li");
+    li.textContent = u.name;
+    userList.appendChild(li);
+  });
+});
+
+// Join Room
+if (name && room) {
+  socket.emit("joinRoom", { name, room });
+  roomNameElem.innerText = `${room} Room`;
+}
