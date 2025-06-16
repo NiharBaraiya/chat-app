@@ -114,3 +114,4 @@ if (name && room) {
   socket.emit("joinRoom", { name, room });
   roomNameElem.textContent = `${room} Room`;
 }
+
