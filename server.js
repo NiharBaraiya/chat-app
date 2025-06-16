@@ -99,12 +99,21 @@ io.on("connection", (socket) => {
   });
 });
 
-// ✅ Helper: format message with timestamp
 function formatMessage(user, text) {
   const now = new Date();
-  const time = now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+
+  // Convert to Indian Standard Time (UTC+5:30)
+  const options = {
+    timeZone: 'Asia/Kolkata',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false, // Optional: use 24-hour format (or true for 12-hour)
+  };
+
+  const time = now.toLocaleTimeString('en-IN', options);
   return { user, text, time };
 }
+
 
 http.listen(PORT, () => {
   console.log(`✅ Server running at http://localhost:${PORT}`);
