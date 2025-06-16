@@ -17,7 +17,7 @@ const languageSelect = document.getElementById("languageSelect");
 
 let selectedLang = "hi";
 
-// Load language list
+// 🌐 Load languages from LibreTranslate
 const loadingOption = document.createElement("option");
 loadingOption.value = "";
 loadingOption.textContent = "🌐 Loading languages...";
@@ -50,7 +50,7 @@ languageSelect.addEventListener("change", () => {
   });
 });
 
-// Translate UI
+// 🈯 Translate UI elements
 function translateUI() {
   const elementsToTranslate = {
     roomName: "Room Chat",
@@ -73,7 +73,7 @@ function translateUI() {
           form.querySelector("button[type='submit']").textContent = safeText;
           break;
         case "clearChat":
-          clearButton.textContent = `\u{1F9F9} ${safeText}`;
+          clearButton.textContent = `🧹 ${safeText}`;
           break;
         case "roomName":
           if (roomNameElem) roomNameElem.textContent = safeText;
@@ -83,18 +83,18 @@ function translateUI() {
           break;
         case "uploadLabel":
           const label = document.querySelector("label[for='fileInput']");
-          if (label) label.textContent = `\u{1F4C1} ${safeText}`;
+          if (label) label.textContent = `📁 ${safeText}`;
           break;
         case "sidebarTitle":
           const sidebarTitle = document.querySelector(".sidebar h3");
-          if (sidebarTitle) sidebarTitle.textContent = `\u{1F465} ${safeText}`;
+          if (sidebarTitle) sidebarTitle.textContent = `👥 ${safeText}`;
           break;
       }
     });
   }
 }
 
-// Translate using LibreTranslate
+// 🌐 Translate message text using LibreTranslate
 async function translateText(text, targetLang) {
   if (!text || !targetLang) return text;
   try {
@@ -111,32 +111,31 @@ async function translateText(text, targetLang) {
   }
 }
 
-// Join room
+// ✅ Join the chat room
 if (name && room) {
   socket.emit("joinRoom", { name, room });
-
   translateText(`${room} Room`, selectedLang).then((translatedRoom) => {
     if (roomNameElem) roomNameElem.textContent = translatedRoom;
   });
 }
 
-// ✅ Send original message only
-form.addEventListener("submit", async (e) => {
+// 📨 Send message
+form.addEventListener("submit", (e) => {
   e.preventDefault();
   const originalText = input.value.trim();
   if (!originalText) return;
 
-  socket.emit("chatMessage", originalText); // ✅ Send untranslated message
+  socket.emit("chatMessage", originalText);
   input.value = "";
   input.focus();
 });
 
-// Clear chat
+// 🧹 Clear chat
 clearButton.addEventListener("click", () => {
   messages.innerHTML = "";
 });
 
-// Typing status
+// ✍️ Typing indicator
 let typingTimeout;
 input.addEventListener("input", () => {
   socket.emit("typing", true);
@@ -148,7 +147,7 @@ socket.on("typing", (text) => {
   typing.innerText = text || "";
 });
 
-// 🔁 Translate incoming messages only if needed
+// 📥 Receive message
 socket.on("message", async (message) => {
   const li = document.createElement("li");
   li.classList.add("message");
@@ -175,7 +174,7 @@ socket.on("message", async (message) => {
   messages.scrollTop = messages.scrollHeight;
 });
 
-// User list
+// 🧑‍🤝‍🧑 Update user list
 socket.on("roomUsers", ({ users }) => {
   userList.innerHTML = "";
   users.forEach((user) => {
@@ -185,48 +184,63 @@ socket.on("roomUsers", ({ users }) => {
   });
 });
 
-// File upload
+// 📤 File upload
 fileInput?.addEventListener("change", () => {
   const file = fileInput.files[0];
   if (!file) return;
+
   const maxSize = 5 * 1024 * 1024;
   if (file.size > maxSize) {
     alert("❌ File too large. Max 5MB allowed.");
     return;
   }
+
   const reader = new FileReader();
   reader.onloadstart = () => {
     uploadProgress.style.display = "block";
     uploadProgress.value = 0;
   };
   reader.onprogress = (e) => {
-    if (e.lengthComputable) uploadProgress.value = (e.loaded / e.total) * 100;
+    if (e.lengthComputable) {
+      uploadProgress.value = (e.loaded / e.total) * 100;
+    }
   };
   reader.onload = () => {
-    const base64 = reader.result;
-    socket.emit("fileUpload", { fileName: file.name, fileData: base64, fileType: file.type });
+    socket.emit("fileUpload", {
+      fileName: file.name,
+      fileData: reader.result,
+      fileType: file.type
+    });
     uploadProgress.style.display = "none";
     fileInput.value = "";
   };
   reader.readAsDataURL(file);
 });
 
-// Receive file
+// 📁 Receive file
 socket.on("fileShared", ({ user, fileName, fileData, fileType, time }) => {
   const li = document.createElement("li");
   li.classList.add("message", user === name ? "sender" : "receiver");
-  const blob = new Blob([Uint8Array.from(atob(fileData.split(',')[1]), c => c.charCodeAt(0))], { type: fileType });
+
+  const blob = new Blob(
+    [Uint8Array.from(atob(fileData.split(',')[1]), c => c.charCodeAt(0))],
+    { type: fileType }
+  );
   const downloadUrl = URL.createObjectURL(blob);
+
   const iconMap = {
     pdf: "📄", doc: "📝", docx: "📝", txt: "📃",
     jpg: "🖼️", jpeg: "🖼️", png: "🖼️", gif: "🖼️",
     zip: "🗜️", mp4: "🎥", mp3: "🎵", default: "📁"
   };
+
   const ext = fileName.split(".").pop().toLowerCase();
   const icon = iconMap[ext] || iconMap.default;
+
   const content = fileType.startsWith("image/")
     ? `<a href="${downloadUrl}" download="${fileName}" target="_blank"><img src="${downloadUrl}" class="shared-img" alt="${fileName}" /></a>`
     : `<a href="${downloadUrl}" download="${fileName}" class="file-link">${icon} ${fileName}</a>`;
+
   li.innerHTML = `<span class="timestamp">${time}</span> <strong>${user === name ? "You" : user}</strong>: ${content}`;
   messages.appendChild(li);
   messages.scrollTop = messages.scrollHeight;
