@@ -1,4 +1,7 @@
+// ✅ Connect to server
 const socket = io();
+
+// ✅ DOM Elements
 const urlParams = new URLSearchParams(window.location.search);
 const name = urlParams.get("name");
 const room = urlParams.get("room");
@@ -8,13 +11,12 @@ const messages = document.getElementById("messages");
 const typing = document.getElementById("typing");
 const roomNameElem = document.getElementById("room-name");
 const userList = document.getElementById("user-list");
-const sendBtn = document.getElementById("sendBtn");
-const clearBtn = document.getElementById("clearBtn");
-const languageSelect = document.getElementById("language");
+const clearBtn = document.getElementById("clearChat");
+const languageSelect = document.getElementById("languageSelect");
 
 let selectedLang = "hi"; // default Hindi
 
-// Load language options dynamically
+// ✅ Load language options dynamically
 languageSelect.innerHTML = `<option selected disabled>Loading…</option>`;
 fetch("https://libretranslate.com/languages")
   .then(res => res.json())
@@ -33,13 +35,13 @@ fetch("https://libretranslate.com/languages")
     languageSelect.innerHTML = `<option disabled>Failed to load</option>`;
   });
 
-// Change UI language when user selects
+// ✅ Change UI language when user selects
 languageSelect.addEventListener("change", () => {
   selectedLang = languageSelect.value;
   translateUI();
 });
 
-// Helper: call translation API
+// ✅ Helper: call translation API
 async function translateText(text, target) {
   if (!text || !target) return text;
   try {
@@ -55,20 +57,20 @@ async function translateText(text, target) {
   }
 }
 
-// Translate UI strings
+// ✅ Translate UI strings
 function translateUI() {
   [
     { el: input, prop: "placeholder", text: "Your message..." },
-    { el: sendBtn, prop: "textContent", text: "Send" },
+    { el: form.querySelector("button[type='submit']"), prop: "textContent", text: "Send" },
     { el: clearBtn, prop: "textContent", text: "Clear Chat" },
     { el: roomNameElem, prop: "textContent", text: `${room} Room` },
   ].forEach(async item => {
     const tr = await translateText(item.text, selectedLang);
-    item.el[item.prop] = tr;
+    if (item.el) item.el[item.prop] = tr;
   });
 }
 
-// Send user message (translated)
+// ✅ Send user message (translated)
 form.addEventListener("submit", async e => {
   e.preventDefault();
   const raw = input.value.trim();
@@ -78,7 +80,7 @@ form.addEventListener("submit", async e => {
   input.value = "";
 });
 
-// Receive and display messages
+// ✅ Receive and display messages
 socket.on("message", msg => {
   const li = document.createElement("li");
   li.className = msg.user === name ? "sender" : "receiver";
@@ -87,19 +89,21 @@ socket.on("message", msg => {
   messages.scrollTop = messages.scrollHeight;
 });
 
-// Typing indicator
+// ✅ Typing indicator
 let typingTimer;
 input.addEventListener("input", () => {
   socket.emit("typing", true);
   clearTimeout(typingTimer);
   typingTimer = setTimeout(() => socket.emit("typing", false), 1000);
 });
-socket.on("typing", txt => { typing.textContent = txt; });
+socket.on("typing", txt => {
+  typing.textContent = txt;
+});
 
-// Clear chat
+// ✅ Clear chat
 clearBtn.addEventListener("click", () => messages.innerHTML = "");
 
-// Update user list
+// ✅ Update user list
 socket.on("roomUsers", ({ users }) => {
   userList.innerHTML = "";
   users.forEach(u => {
@@ -109,9 +113,8 @@ socket.on("roomUsers", ({ users }) => {
   });
 });
 
-// Emit join event
+// ✅ Emit join event
 if (name && room) {
   socket.emit("joinRoom", { name, room });
   roomNameElem.textContent = `${room} Room`;
 }
-
