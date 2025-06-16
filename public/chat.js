@@ -13,6 +13,37 @@ const userList = document.getElementById("user-list");
 const clearButton = document.getElementById("clearChat");
 const fileInput = document.getElementById("fileInput");
 const uploadProgress = document.getElementById("uploadProgress");
+const languageSelect = document.getElementById("languageSelect");
+
+// Fetch supported languages from API
+async function populateLanguages() {
+  try {
+    const res = await fetch("https://libretranslate.com/languages");
+    const langs = await res.json();
+
+    languageSelect.innerHTML = ""; // Clear default option
+
+    langs.forEach(lang => {
+      const option = document.createElement("option");
+      option.value = lang.code;
+      option.textContent = lang.name;
+      languageSelect.appendChild(option);
+    });
+
+    // Restore previously selected language
+    const savedLang = localStorage.getItem("chatLang");
+    if (savedLang) languageSelect.value = savedLang;
+  } catch (err) {
+    console.error("Failed to load languages", err);
+    languageSelect.innerHTML = `<option value="en">English</option>`;
+  }
+}
+
+document.addEventListener("DOMContentLoaded", populateLanguages);
+
+languageSelect.addEventListener("change", () => {
+  localStorage.setItem("chatLang", languageSelect.value);
+});
 
 // ✅ Join room if name and room exist
 if (name && room) {
@@ -34,24 +65,37 @@ form.addEventListener("submit", function (e) {
 });
 
 // ✅ Receive message
-socket.on("message", (message) => {
+socket.on("message", async (message) => {
+  const targetLang = localStorage.getItem("chatLang") || "en";
+
+  let translatedText = message.text;
+
+  if (targetLang !== "en" && message.user !== "System") {
+    try {
+      translatedText = await translateText(message.text, targetLang);
+    } catch (err) {
+      console.warn("Translation failed", err);
+    }
+  }
+
   const li = document.createElement("li");
   li.classList.add("message");
 
   if (message.user === "System") {
     li.classList.add("system");
-    li.innerText = message.text;
+    li.innerText = translatedText;
   } else if (message.user === name) {
     li.classList.add("sender");
-    li.innerHTML = `<span class="timestamp">${message.time}</span> <strong>You</strong>: ${message.text}`;
+    li.innerHTML = `<span class="timestamp">${message.time}</span> <strong>You</strong>: ${translatedText}`;
   } else {
     li.classList.add("receiver");
-    li.innerHTML = `<span class="timestamp">${message.time}</span> <strong>${message.user}</strong>: ${message.text}`;
+    li.innerHTML = `<span class="timestamp">${message.time}</span> <strong>${message.user}</strong>: ${translatedText}`;
   }
 
   messages.appendChild(li);
   messages.scrollTop = messages.scrollHeight;
 });
+
 
 // ✅ Typing status
 let typingTimeout;
@@ -161,3 +205,20 @@ socket.on("fileShared", ({ user, fileName, fileData, fileType, time }) => {
   messages.appendChild(li);
   messages.scrollTop = messages.scrollHeight;
 });
+async function translateText(text, targetLang) {
+  const res = await fetch("https://libretranslate.com/translate", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      q: text,
+      source: "auto",
+      target: targetLang,
+      format: "text"
+    })
+  });
+
+  const data = await res.json();
+  return data.translatedText;
+}
