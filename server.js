@@ -60,6 +60,12 @@ io.on("connection", (socket) => {
     socket.broadcast
       .to(room)
       .emit("message", formatMessage("System", `${name} joined the chat`));
+
+    // ✅ Send updated user list to all clients in the room
+    io.to(room).emit("roomUsers", {
+      room,
+      users: [...roomUsers[room]].map((name) => ({ name })),
+    });
   });
 
   // ✅ Handle incoming messages
@@ -89,7 +95,14 @@ io.on("connection", (socket) => {
       // ✅ Remove from roomUsers
       if (roomUsers[user.room]) {
         roomUsers[user.room].delete(user.name);
-        if (roomUsers[user.room].size === 0) {
+
+        // ✅ Send updated user list to all clients in the room
+        if (roomUsers[user.room].size > 0) {
+          io.to(user.room).emit("roomUsers", {
+            room: user.room,
+            users: [...roomUsers[user.room]].map((name) => ({ name })),
+          });
+        } else {
           delete roomUsers[user.room]; // Cleanup room
         }
       }
@@ -113,7 +126,6 @@ function formatMessage(user, text) {
   const time = now.toLocaleTimeString('en-IN', options);
   return { user, text, time };
 }
-
 
 http.listen(PORT, () => {
   console.log(`✅ Server running at http://localhost:${PORT}`);
