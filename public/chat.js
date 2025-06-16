@@ -1,4 +1,3 @@
-// chat.js
 const socket = io();
 
 const urlParams = new URLSearchParams(window.location.search);
@@ -62,29 +61,30 @@ function translateUI() {
 
   for (const [id, text] of Object.entries(elementsToTranslate)) {
     translateText(text, selectedLang).then((translated) => {
+      const safeText = translated || text;
       switch (id) {
         case "msg":
-          input.placeholder = translated;
+          input.placeholder = safeText;
           break;
         case "chatFormBtn":
-          form.querySelector("button[type='submit']").textContent = translated;
+          form.querySelector("button[type='submit']").textContent = safeText;
           break;
         case "clearChat":
-          clearButton.textContent = `\u{1F9F9} ${translated}`;
+          clearButton.textContent = `\u{1F9F9} ${safeText}`;
           break;
         case "roomName":
-          if (roomNameElem) roomNameElem.textContent = translated;
+          if (roomNameElem) roomNameElem.textContent = safeText;
           break;
         case "typing":
-          if (typing) typing.textContent = translated;
+          if (typing) typing.textContent = safeText;
           break;
         case "uploadLabel":
           const label = document.querySelector("label[for='fileInput']");
-          if (label) label.textContent = `\u{1F4C1} ${translated}`;
+          if (label) label.textContent = `\u{1F4C1} ${safeText}`;
           break;
         case "sidebarTitle":
           const sidebarTitle = document.querySelector(".sidebar h3");
-          if (sidebarTitle) sidebarTitle.textContent = `\u{1F465} ${translated}`;
+          if (sidebarTitle) sidebarTitle.textContent = `\u{1F465} ${safeText}`;
           break;
       }
     });
@@ -93,6 +93,7 @@ function translateUI() {
 
 // Translate using LibreTranslate
 async function translateText(text, targetLang) {
+  if (!text || !targetLang) return text;
   try {
     const res = await fetch("https://libretranslate.com/translate", {
       method: "POST",
@@ -100,7 +101,7 @@ async function translateText(text, targetLang) {
       body: JSON.stringify({ q: text, source: "auto", target: targetLang, format: "text" })
     });
     const data = await res.json();
-    return data.translatedText;
+    return data.translatedText || text;
   } catch (err) {
     console.error("Translation failed:", err);
     return text;
@@ -110,7 +111,18 @@ async function translateText(text, targetLang) {
 // Join room
 if (name && room) {
   socket.emit("joinRoom", { name, room });
-  if (roomNameElem) roomNameElem.textContent = `${room} Room`;
+  translateText(`${room} Room`, selectedLang).then((translatedRoom) => {
+    if (roomNameElem) roomNameElem.textContent = translatedRoom;
+  });
+
+  // Welcome Message
+  translateText(`Welcome ${name}!`, selectedLang).then((translatedWelcome) => {
+    const li = document.createElement("li");
+    li.classList.add("message", "system");
+    li.textContent = translatedWelcome;
+    messages.appendChild(li);
+    messages.scrollTop = messages.scrollHeight;
+  });
 }
 
 // Submit message
