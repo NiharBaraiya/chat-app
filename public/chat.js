@@ -17,14 +17,14 @@ const languageSelect = document.getElementById("languageSelect");
 
 let selectedLang = "hi";
 
-// Load language list from working LibreTranslate mirror
+// Load language list
 const loadingOption = document.createElement("option");
 loadingOption.value = "";
 loadingOption.textContent = "🌐 Loading languages...";
 languageSelect.innerHTML = "";
 languageSelect.appendChild(loadingOption);
 
-fetch("https://libretranslate.de/languages")
+fetch("https://libretranslate.com/languages")
   .then((res) => res.json())
   .then((languages) => {
     languageSelect.innerHTML = "";
@@ -45,6 +45,9 @@ fetch("https://libretranslate.de/languages")
 languageSelect.addEventListener("change", () => {
   selectedLang = languageSelect.value;
   translateUI();
+  translateText(`${room} Room`, selectedLang).then((translatedRoom) => {
+    if (roomNameElem) roomNameElem.textContent = translatedRoom;
+  });
 });
 
 // Translate UI
@@ -70,7 +73,7 @@ function translateUI() {
           form.querySelector("button[type='submit']").textContent = safeText;
           break;
         case "clearChat":
-          clearButton.textContent = `🧹 ${safeText}`;
+          clearButton.textContent = `\u{1F9F9} ${safeText}`;
           break;
         case "roomName":
           if (roomNameElem) roomNameElem.textContent = safeText;
@@ -80,22 +83,22 @@ function translateUI() {
           break;
         case "uploadLabel":
           const label = document.querySelector("label[for='fileInput']");
-          if (label) label.textContent = `📁 ${safeText}`;
+          if (label) label.textContent = `\u{1F4C1} ${safeText}`;
           break;
         case "sidebarTitle":
           const sidebarTitle = document.querySelector(".sidebar h3");
-          if (sidebarTitle) sidebarTitle.textContent = `👥 ${safeText}`;
+          if (sidebarTitle) sidebarTitle.textContent = `\u{1F465} ${safeText}`;
           break;
       }
     });
   }
 }
 
-// Translate using LibreTranslate.de
+// Translate using LibreTranslate
 async function translateText(text, targetLang) {
   if (!text || !targetLang) return text;
   try {
-    const res = await fetch("https://libretranslate.de/translate", {
+    const res = await fetch("https://libretranslate.com/translate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ q: text, source: "auto", target: targetLang, format: "text" })
@@ -111,28 +114,19 @@ async function translateText(text, targetLang) {
 // Join room
 if (name && room) {
   socket.emit("joinRoom", { name, room });
+
   translateText(`${room} Room`, selectedLang).then((translatedRoom) => {
     if (roomNameElem) roomNameElem.textContent = translatedRoom;
   });
-
-  // Welcome Message
-  translateText(`Welcome ${name}!`, selectedLang).then((translatedWelcome) => {
-    const li = document.createElement("li");
-    li.classList.add("message", "system");
-    li.textContent = translatedWelcome;
-    messages.appendChild(li);
-    messages.scrollTop = messages.scrollHeight;
-  });
 }
 
-// Submit message
+// ✅ Send original message only
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
   const originalText = input.value.trim();
   if (!originalText) return;
 
-  const translated = await translateText(originalText, selectedLang);
-  socket.emit("chatMessage", translated);
+  socket.emit("chatMessage", originalText); // ✅ Send untranslated message
   input.value = "";
   input.focus();
 });
@@ -154,20 +148,27 @@ socket.on("typing", (text) => {
   typing.innerText = text || "";
 });
 
-// Receive message
-socket.on("message", (message) => {
+// 🔁 Translate incoming messages only if needed
+socket.on("message", async (message) => {
   const li = document.createElement("li");
   li.classList.add("message");
 
-  if (message.user === "System") {
+  const isSelf = message.user === name;
+  const isSystem = message.user === "System";
+
+  const displayText = !isSelf || isSystem
+    ? await translateText(message.text, selectedLang)
+    : message.text;
+
+  if (isSystem) {
     li.classList.add("system");
-    li.textContent = message.text;
-  } else if (message.user === name) {
+    li.textContent = displayText;
+  } else if (isSelf) {
     li.classList.add("sender");
-    li.innerHTML = `<span class="timestamp">${message.time}</span> <strong>You</strong>: ${message.text}`;
+    li.innerHTML = `<span class="timestamp">${message.time}</span> <strong>You</strong>: ${displayText}`;
   } else {
     li.classList.add("receiver");
-    li.innerHTML = `<span class="timestamp">${message.time}</span> <strong>${message.user}</strong>: ${message.text}`;
+    li.innerHTML = `<span class="timestamp">${message.time}</span> <strong>${message.user}</strong>: ${displayText}`;
   }
 
   messages.appendChild(li);
