@@ -22,24 +22,40 @@ const clearBtn = document.getElementById("clearBtn");
 
 let selectedLang = "hi"; // default to Hindi
 
-// ✅ Dynamically load languages from LibreTranslate
+const languageSelect = document.getElementById("language");
+
+// ✅ Add temporary "Loading..." option
+const loadingOption = document.createElement("option");
+loadingOption.value = "";
+loadingOption.textContent = "🌐 Loading languages...";
+languageSelect.appendChild(loadingOption);
+
+// ✅ Fetch languages from LibreTranslate
 fetch("https://libretranslate.com/languages")
   .then((res) => res.json())
   .then((languages) => {
+    languageSelect.innerHTML = ""; // Clear "Loading..." option
+
     languages.forEach((lang) => {
       const option = document.createElement("option");
       option.value = lang.code;
       option.textContent = lang.name;
       languageSelect.appendChild(option);
     });
-    languageSelect.value = selectedLang;
-    translateUI(); // Initial UI translation
+
+    // Set default language
+    languageSelect.value = "hi";
+    translateUI(); // Translate UI initially
+  })
+  .catch((err) => {
+    console.error("Failed to load languages:", err);
+    languageSelect.innerHTML = "";
+    const errorOption = document.createElement("option");
+    errorOption.value = "";
+    errorOption.textContent = "❌ Failed to load languages";
+    languageSelect.appendChild(errorOption);
   });
 
-languageSelect.addEventListener("change", () => {
-  selectedLang = languageSelect.value;
-  translateUI();
-});
 
 // ✅ Translate UI dynamically
 function translateUI() {
