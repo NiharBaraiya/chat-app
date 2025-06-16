@@ -1,159 +1,105 @@
 const socket = io();
-
 const urlParams = new URLSearchParams(window.location.search);
 const name = urlParams.get("name");
 const room = urlParams.get("room");
-
 const form = document.getElementById("chatForm");
 const input = document.getElementById("msg");
 const messages = document.getElementById("messages");
 const typing = document.getElementById("typing");
 const roomNameElem = document.getElementById("room-name");
 const userList = document.getElementById("user-list");
-const clearBtn = document.getElementById("clearChat");
-const fileInput = document.getElementById("fileInput");
-const uploadProgress = document.getElementById("uploadProgress");
+const sendBtn = document.getElementById("sendBtn");
+const clearBtn = document.getElementById("clearBtn");
 const languageSelect = document.getElementById("language");
 
-let selectedLang = "hi";
+let selectedLang = "hi"; // default Hindi
 
-// Initial "Loading..." dropdown
-languageSelect.innerHTML = `<option selected disabled>🌐 Loading...</option>`;
-
-// Load dynamic language list from LibreTranslate
+// Load language options dynamically
+languageSelect.innerHTML = `<option selected disabled>Loading…</option>`;
 fetch("https://libretranslate.com/languages")
   .then(res => res.json())
-  .then(languages => {
-    languageSelect.innerHTML = ""; // Clear old loading option
-    languages.forEach(lang => {
-      const option = document.createElement("option");
-      option.value = lang.code;
-      option.textContent = lang.name;
-      languageSelect.appendChild(option);
+  .then(langs => {
+    languageSelect.innerHTML = "";
+    langs.forEach(l => {
+      const opt = document.createElement("option");
+      opt.value = l.code;
+      opt.textContent = l.name;
+      languageSelect.appendChild(opt);
     });
     languageSelect.value = selectedLang;
     translateUI();
   })
   .catch(() => {
-    languageSelect.innerHTML = `<option disabled selected>❌ Failed to load</option>`;
+    languageSelect.innerHTML = `<option disabled>Failed to load</option>`;
   });
 
-// Change language on select
+// Change UI language when user selects
 languageSelect.addEventListener("change", () => {
   selectedLang = languageSelect.value;
   translateUI();
 });
 
-async function translateText(q, target) {
-  if (!q || !target) return q;
+// Helper: call translation API
+async function translateText(text, target) {
+  if (!text || !target) return text;
   try {
-    const response = await fetch("https://libretranslate.com/translate", {
+    const res = await fetch("https://libretranslate.com/translate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ q, source: "auto", target, format: "text" }),
+      body: JSON.stringify({ q: text, source: "auto", target, format: "text" })
     });
-    const data = await response.json();
-    return data.translatedText;
+    const json = await res.json();
+    return json.translatedText;
   } catch {
-    return q;
+    return text;
   }
 }
 
-// UI translations
+// Translate UI strings
 function translateUI() {
-  const items = [
-    { selector: "#msg", attr: "placeholder", text: "Your message..." },
-    { selector: "#sendBtn", attr: "text", text: "Send" },
-    { selector: "#clearChat", attr: "text", text: "Clear Chat" },
-    { selector: "#fileLabel", attr: "text", text: "Send File:" },
-    { selector: "#room-name", attr: "text", text: `${room} Room` },
-    { selector: ".users-title", attr: "text", text: "Users List" },
-  ];
-
-  items.forEach(async item => {
-    const translated = await translateText(item.text, selectedLang);
-    const el = document.querySelector(item.selector);
-    if (!el) return;
-    if (item.attr === "text") el.textContent = translated;
-    else if (item.attr === "placeholder") el.placeholder = translated;
+  [
+    { el: input, prop: "placeholder", text: "Your message..." },
+    { el: sendBtn, prop: "textContent", text: "Send" },
+    { el: clearBtn, prop: "textContent", text: "Clear Chat" },
+    { el: roomNameElem, prop: "textContent", text: `${room} Room` },
+  ].forEach(async item => {
+    const tr = await translateText(item.text, selectedLang);
+    item.el[item.prop] = tr;
   });
 }
 
-// Send Message
+// Send user message (translated)
 form.addEventListener("submit", async e => {
   e.preventDefault();
-  const msg = input.value.trim();
-  if (!msg) return;
-  const translated = await translateText(msg, selectedLang);
+  const raw = input.value.trim();
+  if (!raw) return;
+  const translated = await translateText(raw, selectedLang);
   socket.emit("chatMessage", translated);
   input.value = "";
 });
 
-// Display Message
-socket.on("message", m => {
+// Receive and display messages
+socket.on("message", msg => {
   const li = document.createElement("li");
-  li.className = "message";
-  const isYou = m.user === name;
-  li.classList.add(isYou ? "sender" : "receiver");
-
-  li.innerHTML = `<span class="timestamp">${m.time}</span> <strong>${isYou ? "You" : m.user}</strong>: ${m.text}`;
+  li.className = msg.user === name ? "sender" : "receiver";
+  li.innerHTML = `<span class="timestamp">${msg.time}</span> <strong>${msg.user === name ? "You" : msg.user}</strong>: ${msg.text}`;
   messages.appendChild(li);
   messages.scrollTop = messages.scrollHeight;
 });
 
 // Typing indicator
-let typingTimeout;
+let typingTimer;
 input.addEventListener("input", () => {
   socket.emit("typing", true);
-  clearTimeout(typingTimeout);
-  typingTimeout = setTimeout(() => socket.emit("typing", false), 1000);
+  clearTimeout(typingTimer);
+  typingTimer = setTimeout(() => socket.emit("typing", false), 1000);
 });
-socket.on("typing", txt => typing.innerText = txt);
+socket.on("typing", txt => { typing.textContent = txt; });
 
-// Clear Chat
+// Clear chat
 clearBtn.addEventListener("click", () => messages.innerHTML = "");
 
-// File Upload
-fileInput?.addEventListener("change", () => {
-  const f = fileInput.files[0];
-  if (!f || f.size > 5 * 1024 * 1024) return alert("Max 5MB");
-
-  const reader = new FileReader();
-  reader.onloadstart = () => { uploadProgress.style.display = "block"; uploadProgress.value = 0; };
-  reader.onprogress = e => { if (e.lengthComputable) uploadProgress.value = e.loaded / e.total * 100; };
-  reader.onload = () => {
-    socket.emit("fileUpload", {
-      fileName: f.name,
-      fileData: reader.result,
-      fileType: f.type,
-    });
-    uploadProgress.style.display = "none";
-    fileInput.value = "";
-  };
-  reader.readAsDataURL(f);
-});
-
-// Display uploaded file
-socket.on("fileShared", data => {
-  const { user, fileName, fileData, fileType, time } = data;
-  const li = document.createElement("li");
-  const isYou = user === name;
-  li.className = "message " + (isYou ? "sender" : "receiver");
-
-  const blob = new Blob([Uint8Array.from(atob(fileData.split(',')[1]), c => c.charCodeAt(0))], { type: fileType });
-  const url = URL.createObjectURL(blob);
-
-  if (fileType.startsWith("image/")) {
-    li.innerHTML = `<span class="timestamp">${time}</span> <strong>${isYou ? "You" : user}</strong>: <a href="${url}" download="${fileName}"><img src="${url}" class="shared-img"></a>`;
-  } else {
-    li.innerHTML = `<span class="timestamp">${time}</span> <strong>${isYou ? "You" : user}</strong>: <a href="${url}" download="${fileName}">📎 ${fileName}</a>`;
-  }
-
-  messages.appendChild(li);
-  messages.scrollTop = messages.scrollHeight;
-});
-
-// User list
+// Update user list
 socket.on("roomUsers", ({ users }) => {
   userList.innerHTML = "";
   users.forEach(u => {
@@ -163,8 +109,8 @@ socket.on("roomUsers", ({ users }) => {
   });
 });
 
-// Join Room
+// Emit join event
 if (name && room) {
   socket.emit("joinRoom", { name, room });
-  roomNameElem.innerText = `${room} Room`;
+  roomNameElem.textContent = `${room} Room`;
 }
