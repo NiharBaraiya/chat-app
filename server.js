@@ -79,19 +79,26 @@ io.on("connection", (socket) => {
     }
   });
 
-  // ✅ Handle file upload (image/file sharing)
   socket.on("fileUpload", ({ fileName, fileData, fileType }) => {
-    const user = users[socket.id];
-    if (user) {
-      io.to(user.room).emit("fileShared", {
-        user: user.name,
-        fileName,
-        fileData,
-        fileType,
-        time: getCurrentTime()
-      });
-    }
-  });
+  const user = users[socket.id];
+  if (user) {
+    const time = new Date().toLocaleTimeString('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+
+    io.to(user.room).emit("fileShared", {
+      user: user.name,
+      fileName,
+      fileData,
+      fileType,
+      time,
+    });
+  }
+});
+
 
   // ✅ Handle disconnect
   socket.on("disconnect", () => {
@@ -140,3 +147,4 @@ function getCurrentTime() {
 http.listen(PORT, () => {
   console.log(`✅ Server running at http://localhost:${PORT}`);
 });
+
