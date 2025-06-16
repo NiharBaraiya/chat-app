@@ -15,16 +15,16 @@ const fileInput = document.getElementById("fileInput");
 const uploadProgress = document.getElementById("uploadProgress");
 const languageSelect = document.getElementById("languageSelect");
 
-let selectedLang = "hi"; // Hindi by default
+let selectedLang = "hi";
 
-// Load language list
+// Load language list from working LibreTranslate mirror
 const loadingOption = document.createElement("option");
 loadingOption.value = "";
 loadingOption.textContent = "🌐 Loading languages...";
 languageSelect.innerHTML = "";
 languageSelect.appendChild(loadingOption);
 
-fetch("https://translate.argosopentech.com/languages")
+fetch("https://libretranslate.de/languages")
   .then((res) => res.json())
   .then((languages) => {
     languageSelect.innerHTML = "";
@@ -91,11 +91,11 @@ function translateUI() {
   }
 }
 
-// Translate using LibreTranslate (reliable server)
+// Translate using LibreTranslate.de
 async function translateText(text, targetLang) {
   if (!text || !targetLang) return text;
   try {
-    const res = await fetch("https://translate.argosopentech.com/translate", {
+    const res = await fetch("https://libretranslate.de/translate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ q: text, source: "auto", target: targetLang, format: "text" })
