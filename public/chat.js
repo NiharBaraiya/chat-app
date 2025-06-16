@@ -14,6 +14,7 @@ const clearButton = document.getElementById("clearChat");
 const fileInput = document.getElementById("fileInput");
 const uploadProgress = document.getElementById("uploadProgress");
 
+// ✅ Join room if name and room exist
 if (name && room) {
   socket.emit("joinRoom", { name, room });
   if (roomNameElem) {
@@ -21,6 +22,7 @@ if (name && room) {
   }
 }
 
+// ✅ Send message
 form.addEventListener("submit", function (e) {
   e.preventDefault();
   const message = input.value.trim();
@@ -31,6 +33,7 @@ form.addEventListener("submit", function (e) {
   }
 });
 
+// ✅ Receive message
 socket.on("message", (message) => {
   const li = document.createElement("li");
   li.classList.add("message");
@@ -50,6 +53,7 @@ socket.on("message", (message) => {
   messages.scrollTop = messages.scrollHeight;
 });
 
+// ✅ Typing status
 let typingTimeout;
 input.addEventListener("input", () => {
   socket.emit("typing", true);
@@ -63,10 +67,12 @@ socket.on("typing", (text) => {
   typing.innerText = text || "";
 });
 
+// ✅ Clear chat button
 clearButton.addEventListener("click", () => {
   messages.innerHTML = "";
 });
 
+// ✅ Update user list
 socket.on("roomUsers", ({ users }) => {
   userList.innerHTML = "";
   users.forEach((user) => {
@@ -76,12 +82,12 @@ socket.on("roomUsers", ({ users }) => {
   });
 });
 
-// ✅ Upload file/image
-fileInput.addEventListener("change", () => {
+// ✅ File Upload
+fileInput?.addEventListener("change", () => {
   const file = fileInput.files[0];
   if (!file) return;
 
-  const maxSize = 5 * 1024 * 1024;
+  const maxSize = 5 * 1024 * 1024; // 5MB
   if (file.size > maxSize) {
     alert("❌ File too large. Max 5MB allowed.");
     return;
@@ -111,29 +117,47 @@ fileInput.addEventListener("change", () => {
   reader.readAsDataURL(file);
 });
 
+// ✅ Receive file in chat
 socket.on("fileShared", ({ user, fileName, fileData, fileType, time }) => {
   const li = document.createElement("li");
   li.classList.add("message", user === name ? "sender" : "receiver");
 
-  const blob = new Blob([
-    Uint8Array.from(atob(fileData.split(",")[1]), (c) => c.charCodeAt(0))
-  ], { type: fileType });
+  const blob = new Blob([Uint8Array.from(atob(fileData.split(',')[1]), c => c.charCodeAt(0))], { type: fileType });
   const downloadUrl = URL.createObjectURL(blob);
 
   let content = "";
+  const fileExt = fileName.split('.').pop().toLowerCase();
+
+  const fileIcons = {
+    pdf: "📄",
+    doc: "📝",
+    docx: "📝",
+    txt: "📃",
+    jpg: "🖼️",
+    jpeg: "🖼️",
+    png: "🖼️",
+    gif: "🖼️",
+    zip: "🗜️",
+    mp4: "🎥",
+    mp3: "🎵",
+    default: "📁"
+  };
+
+  const icon = fileIcons[fileExt] || fileIcons.default;
+
   if (fileType.startsWith("image/")) {
     content = `
       <a href="${downloadUrl}" download="${fileName}" target="_blank">
         <img src="${downloadUrl}" alt="${fileName}" class="shared-img" />
       </a>`;
   } else {
-    content = `<a href="${downloadUrl}" download="${fileName}" class="file-link">📁 ${fileName}</a>`;
+    content = `<a href="${downloadUrl}" download="${fileName}" class="file-link">${icon} ${fileName}</a>`;
   }
 
   li.innerHTML = `
-    <span class="timestamp">${time}</span>
-    <strong>${user === name ? "You" : user}</strong>: ${content}
+    <span class="timestamp">${time}</span> <strong>${user === name ? "You" : user}</strong>: ${content}
   `;
+
   messages.appendChild(li);
   messages.scrollTop = messages.scrollHeight;
 });
