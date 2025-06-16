@@ -98,6 +98,13 @@ button#clearChat {
 button#clearChat:hover {
   background-color: #c82333;
 }
+.upload-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
 /* ==== RESET & BASE STYLES ==== */
 * {
   margin: 0;
