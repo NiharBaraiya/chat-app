@@ -9,6 +9,7 @@ const input = document.getElementById("msg");
 const messages = document.getElementById("messages");
 const typing = document.getElementById("typing");
 const roomNameElem = document.getElementById("room-name");
+const userList = document.getElementById("user-list");
 const clearButton = document.getElementById("clearChat");
 
 // ✅ Join room if name and room exist in URL
@@ -19,12 +20,12 @@ if (name && room) {
   }
 }
 
-// ✅ Send message (only message string)
+// ✅ Send message
 form.addEventListener("submit", function (e) {
   e.preventDefault();
   const message = input.value.trim();
   if (message) {
-    socket.emit("chatMessage", message); // ✅ only the message text
+    socket.emit("chatMessage", message);
     input.value = "";
     input.focus();
   }
@@ -33,8 +34,6 @@ form.addEventListener("submit", function (e) {
 // ✅ Receive message
 socket.on("message", (message) => {
   const li = document.createElement("li");
-
-  // Always apply base "message" class
   li.classList.add("message");
 
   if (message.user === "System") {
@@ -42,16 +41,10 @@ socket.on("message", (message) => {
     li.innerText = message.text;
   } else if (message.user === name) {
     li.classList.add("sender");
-    li.innerHTML = `
-      <span class="timestamp">${message.time}</span>
-      <strong>You</strong>: ${message.text}
-    `;
+    li.innerHTML = `<span class="timestamp">${message.time}</span> <strong>You</strong>: ${message.text}`;
   } else {
     li.classList.add("receiver");
-    li.innerHTML = `
-      <span class="timestamp">${message.time}</span>
-      <strong>${message.user}</strong>: ${message.text}
-    `;
+    li.innerHTML = `<span class="timestamp">${message.time}</span> <strong>${message.user}</strong>: ${message.text}`;
   }
 
   messages.appendChild(li);
@@ -72,7 +65,18 @@ socket.on("typing", (text) => {
   typing.innerText = text || "";
 });
 
-// ✅ Clear Chat functionality
+// ✅ Clear chat button
 clearButton.addEventListener("click", () => {
   messages.innerHTML = "";
+});
+
+// ✅ Update user list
+socket.on("roomUsers", ({ users }) => {
+  userList.innerHTML = "";
+
+  users.forEach((user) => {
+    const li = document.createElement("li");
+    li.textContent = user.name;
+    userList.appendChild(li);
+  });
 });
