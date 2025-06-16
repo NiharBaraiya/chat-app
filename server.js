@@ -39,29 +39,23 @@ io.on("connection", (socket) => {
     users[socket.id] = currentUser;
     socket.join(room);
 
-    // ✅ Initialize Set for room if not present
     if (!roomUsers[room]) {
       roomUsers[room] = new Set();
     }
 
-    // ✅ Get users already in room BEFORE adding new user
     const existing = [...roomUsers[room]];
     if (existing.length > 0) {
       socket.emit("message", formatMessage("System", `${existing.join(", ")} already joined this chat.`));
     }
 
-    // ✅ Now add new user to the room set
     roomUsers[room].add(name);
 
-    // ✅ Welcome new user
     socket.emit("message", formatMessage("System", `Welcome ${name}!`));
 
-    // ✅ Notify others in the room
     socket.broadcast
       .to(room)
       .emit("message", formatMessage("System", `${name} joined the chat`));
 
-    // ✅ Send updated user list to all clients in the room
     io.to(room).emit("roomUsers", {
       room,
       users: [...roomUsers[room]].map((name) => ({ name })),
@@ -85,6 +79,20 @@ io.on("connection", (socket) => {
     }
   });
 
+  // ✅ Handle file upload (image/file sharing)
+  socket.on("fileUpload", ({ fileName, fileData, fileType }) => {
+    const user = users[socket.id];
+    if (user) {
+      io.to(user.room).emit("fileShared", {
+        user: user.name,
+        fileName,
+        fileData,
+        fileType,
+        time: getCurrentTime()
+      });
+    }
+  });
+
   // ✅ Handle disconnect
   socket.on("disconnect", () => {
     const user = users[socket.id];
@@ -92,18 +100,16 @@ io.on("connection", (socket) => {
       socket.to(user.room).emit("message", formatMessage("System", `${user.name} left the chat.`));
       socket.to(user.room).emit("typing", "");
 
-      // ✅ Remove from roomUsers
       if (roomUsers[user.room]) {
         roomUsers[user.room].delete(user.name);
 
-        // ✅ Send updated user list to all clients in the room
         if (roomUsers[user.room].size > 0) {
           io.to(user.room).emit("roomUsers", {
             room: user.room,
             users: [...roomUsers[user.room]].map((name) => ({ name })),
           });
         } else {
-          delete roomUsers[user.room]; // Cleanup room
+          delete roomUsers[user.room];
         }
       }
 
@@ -113,18 +119,22 @@ io.on("connection", (socket) => {
 });
 
 function formatMessage(user, text) {
-  const now = new Date();
+  return {
+    user,
+    text,
+    time: getCurrentTime()
+  };
+}
 
-  // Convert to Indian Standard Time (UTC+5:30)
+function getCurrentTime() {
+  const now = new Date();
   const options = {
     timeZone: 'Asia/Kolkata',
     hour: '2-digit',
     minute: '2-digit',
-    hour12: false, // Optional: use 24-hour format (or true for 12-hour)
+    hour12: false,
   };
-
-  const time = now.toLocaleTimeString('en-IN', options);
-  return { user, text, time };
+  return now.toLocaleTimeString('en-IN', options);
 }
 
 http.listen(PORT, () => {
