@@ -12,7 +12,7 @@ const roomNameElem = document.getElementById("room-name");
 const userList = document.getElementById("user-list");
 const clearButton = document.getElementById("clearChat");
 
-// ✅ Join room if name and room exist in URL
+// ✅ Join room if name and room exist
 if (name && room) {
   socket.emit("joinRoom", { name, room });
   if (roomNameElem) {
@@ -73,7 +73,6 @@ clearButton.addEventListener("click", () => {
 // ✅ Update user list
 socket.on("roomUsers", ({ users }) => {
   userList.innerHTML = "";
-
   users.forEach((user) => {
     const li = document.createElement("li");
     li.textContent = user.name;
