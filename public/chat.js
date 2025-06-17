@@ -1,4 +1,3 @@
-
 const socket = io();
 
 const urlParams = new URLSearchParams(window.location.search);
@@ -14,16 +13,15 @@ const userList = document.getElementById("user-list");
 const clearButton = document.getElementById("clearChat");
 const fileInput = document.getElementById("fileInput");
 const uploadProgress = document.getElementById("uploadProgress");
+const emojiPicker = document.getElementById("emoji-picker");
 
-// ✅ Join room if name and room exist
+const emojiList = ["😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃","😉","😌","😍","😘","😗","😋","😜","🤪","😎","😭","😡","😱"];
+
 if (name && room) {
   socket.emit("joinRoom", { name, room });
-  if (roomNameElem) {
-    roomNameElem.innerText = `${room} Room`;
-  }
+  roomNameElem.innerText = `${room} Room`;
 }
 
-// ✅ Send message
 form.addEventListener("submit", function (e) {
   e.preventDefault();
   const message = input.value.trim();
@@ -34,46 +32,44 @@ form.addEventListener("submit", function (e) {
   }
 });
 
-// ✅ Receive message
 socket.on("message", (message) => {
   const li = document.createElement("li");
   li.classList.add("message");
+  li.id = `msg-${message.id}`; // Unique ID
 
   if (message.user === "System") {
     li.classList.add("system");
     li.innerText = message.text;
-  } else if (message.user === name) {
-    li.classList.add("sender");
-    li.innerHTML = `<span class="timestamp">${message.time}</span> <strong>You</strong>: ${message.text}`;
   } else {
-    li.classList.add("receiver");
-    li.innerHTML = `<span class="timestamp">${message.time}</span> <strong>${message.user}</strong>: ${message.text}`;
+    li.classList.add(message.user === name ? "sender" : "receiver");
+    li.innerHTML = `
+      <span class="timestamp">${message.time}</span> 
+      <strong>${message.user === name ? "You" : message.user}</strong>: ${message.text}
+      <div class="reactions"></div>
+    `;
   }
 
   messages.appendChild(li);
   messages.scrollTop = messages.scrollHeight;
 });
 
-// ✅ Typing status
 let typingTimeout;
 input.addEventListener("input", () => {
   socket.emit("typing", true);
   clearTimeout(typingTimeout);
   typingTimeout = setTimeout(() => {
     socket.emit("typing", false);
-  }, 100000);
+  }, 3000);
 });
 
 socket.on("typing", (text) => {
   typing.innerText = text || "";
 });
 
-// ✅ Clear chat button
 clearButton.addEventListener("click", () => {
   messages.innerHTML = "";
 });
 
-// ✅ Update user list
 socket.on("roomUsers", ({ users }) => {
   userList.innerHTML = "";
   users.forEach((user) => {
@@ -83,12 +79,10 @@ socket.on("roomUsers", ({ users }) => {
   });
 });
 
-// ✅ File Upload
 fileInput?.addEventListener("change", () => {
   const file = fileInput.files[0];
   if (!file) return;
-
-  const maxSize = 5 * 1024 * 1024; // 5MB
+  const maxSize = 5 * 1024 * 1024;
   if (file.size > maxSize) {
     alert("❌ File too large. Max 5MB allowed.");
     return;
@@ -118,7 +112,6 @@ fileInput?.addEventListener("change", () => {
   reader.readAsDataURL(file);
 });
 
-// ✅ Receive file in chat
 socket.on("fileShared", ({ user, fileName, fileData, fileType, time }) => {
   const li = document.createElement("li");
   li.classList.add("message", user === name ? "sender" : "receiver");
@@ -126,39 +119,54 @@ socket.on("fileShared", ({ user, fileName, fileData, fileType, time }) => {
   const blob = new Blob([Uint8Array.from(atob(fileData.split(',')[1]), c => c.charCodeAt(0))], { type: fileType });
   const downloadUrl = URL.createObjectURL(blob);
 
-  let content = "";
   const fileExt = fileName.split('.').pop().toLowerCase();
-
   const fileIcons = {
-    pdf: "📄",
-    doc: "📝",
-    docx: "📝",
-    txt: "📃",
-    jpg: "🖼️",
-    jpeg: "🖼️",
-    png: "🖼️",
-    gif: "🖼️",
-    zip: "🗜️",
-    mp4: "🎥",
-    mp3: "🎵",
-    default: "📁"
+    pdf: "📄", doc: "📝", docx: "📝", txt: "📃",
+    jpg: "🖼️", jpeg: "🖼️", png: "🖼️", gif: "🖼️",
+    zip: "🗜️", mp4: "🎥", mp3: "🎵", default: "📁"
   };
-
   const icon = fileIcons[fileExt] || fileIcons.default;
 
-  if (fileType.startsWith("image/")) {
-    content = `
-      <a href="${downloadUrl}" download="${fileName}" target="_blank">
-        <img src="${downloadUrl}" alt="${fileName}" class="shared-img" />
-      </a>`;
-  } else {
-    content = `<a href="${downloadUrl}" download="${fileName}" class="file-link">${icon} ${fileName}</a>`;
-  }
+  let content = fileType.startsWith("image/")
+    ? `<a href="${downloadUrl}" download="${fileName}" target="_blank">
+         <img src="${downloadUrl}" alt="${fileName}" class="shared-img" />
+       </a>`
+    : `<a href="${downloadUrl}" download="${fileName}" class="file-link">${icon} ${fileName}</a>`;
 
   li.innerHTML = `
-    <span class="timestamp">${time}</span> <strong>${user === name ? "You" : user}</strong>: ${content}
+    <span class="timestamp">${time}</span> 
+    <strong>${user === name ? "You" : user}</strong>: ${content}
   `;
-
   messages.appendChild(li);
   messages.scrollTop = messages.scrollHeight;
+});
+
+// ✅ Emoji Picker Rendering
+emojiList.forEach((emoji) => {
+  const span = document.createElement("span");
+  span.textContent = emoji;
+  span.addEventListener("click", () => {
+    const lastMsg = messages.lastElementChild;
+    if (lastMsg && lastMsg.id) {
+      const messageId = lastMsg.id.replace("msg-", "");
+      socket.emit("addReaction", { messageId, emoji });
+    }
+  });
+  emojiPicker.appendChild(span);
+});
+
+// ✅ Handle incoming reactions
+socket.on("reactionAdded", ({ messageId, emoji }) => {
+  const msgElem = document.getElementById(`msg-${messageId}`);
+  if (msgElem) {
+    let reactionBox = msgElem.querySelector(".reactions");
+    if (!reactionBox) {
+      reactionBox = document.createElement("div");
+      reactionBox.className = "reactions";
+      msgElem.appendChild(reactionBox);
+    }
+    const span = document.createElement("span");
+    span.textContent = emoji;
+    reactionBox.appendChild(span);
+  }
 });
