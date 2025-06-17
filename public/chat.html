@@ -13,15 +13,17 @@
   <div id="messages"></div>
 
   <!-- Emoji List -->
-  <div id="emoji-picker"></div>
+<!-- Emoji Picker (hidden by default) -->
+<div id="emoji-picker"></div>
 
-  <!-- Chat Form -->
-  <form id="chatForm">
-    <button type="button" id="emoji-btn">😀</button>
-    <input type="text" id="msg" autocomplete="off" placeholder="Type a message..." />
-    <button type="submit">📤</button>
-  </form>
-</div>
+<!-- Message form -->
+<form id="chatForm">
+  <button type="button" id="emoji-btn">😀</button>
+  <input type="text" id="msg" placeholder="Type a message..." autocomplete="off" />
+  <button type="submit">📤</button>
+  <button type="button" id="clear-btn">🧹</button>
+</form>
+
 
 <script src="/socket.io/socket.io.js"></script>
 <script src="chat.js"></script>
