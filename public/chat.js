@@ -4,85 +4,95 @@ const urlParams = new URLSearchParams(window.location.search);
 const name = urlParams.get("name") || "Guest";
 const room = urlParams.get("room") || "General";
 
-// Display room name
-document.getElementById("room-name").innerText = `💬 ${room} Room`;
-
-// Join chat room
-socket.emit("joinRoom", { name, room });
-
-// DOM elements
+const messages = document.getElementById("messages");
 const form = document.getElementById("chatForm");
 const input = document.getElementById("msg");
-const messages = document.getElementById("messages");
-const typing = document.getElementById("typing");
 const emojiBtn = document.getElementById("emoji-btn");
 const emojiPicker = document.getElementById("emoji-picker");
+const reactionPicker = document.getElementById("reaction-picker");
+const clearBtn = document.getElementById("clear-btn");
 
-// ========== ✅ Emoji Picker Setup ==========
-const emojiList = [
-  "😀","😃","😄","😁","😆","😅","😂","🤣","😊","😍","😘","😋",
-  "😜","🤪","😎","😭","😡","😱","😇","😉","😌","😔","😢","😤"
-];
+document.getElementById("msg").focus();
 
-// Populate emoji picker
-emojiList.forEach(emoji => {
+socket.emit("joinRoom", { name, room });
+
+socket.on("message", (message) => {
+  const li = document.createElement("div");
+  li.className = "message";
+  li.setAttribute("data-id", message.id);
+
+  li.innerHTML = `
+    <span class="timestamp">${message.time}</span>
+    <strong>${message.user === name ? "You" : message.user}</strong>: ${message.text}
+    <button class="react-btn" data-id="${message.id}">😊</button>
+    <div class="reactions" id="reactions-${message.id}"></div>
+  `;
+
+  messages.appendChild(li);
+  messages.scrollTop = messages.scrollHeight;
+});
+
+form.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const msg = input.value.trim();
+  if (msg !== "") {
+    socket.emit("chatMessage", msg);
+    input.value = "";
+  }
+});
+
+clearBtn.addEventListener("click", () => {
+  messages.innerHTML = "";
+});
+
+emojiBtn.addEventListener("click", () => {
+  // Show emoji picker for input box
+  emojiPicker.style.display = emojiPicker.style.display === "block" ? "none" : "block";
+  reactionPicker.style.display = "none";
+});
+
+messages.addEventListener("click", (e) => {
+  if (e.target.classList.contains("react-btn")) {
+    const msgId = e.target.dataset.id;
+    reactionPicker.setAttribute("data-msg-id", msgId);
+    reactionPicker.style.display = "block";
+    emojiPicker.style.display = "none";
+    reactionPicker.scrollIntoView({ behavior: "smooth" });
+  }
+});
+
+// Emoji list
+const emojiList = ["😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","😉","😍","😘","😋","😛","😜","🤪","😝","🤗","🤫","🤔","😐","😑","😶","😏","😒","🙄","😬","🥵","🥶","😎","🤓","🧐","😕","🙁","😮","😲","😳","🥺","😢","😭","😱","😖","😞","😓","😫","🥱","😤","😡","😠","🤬"];
+
+// Populate emoji picker for input
+emojiList.forEach((emoji) => {
   const span = document.createElement("span");
   span.textContent = emoji;
-  span.style.cursor = "pointer";
-  span.style.fontSize = "24px";
-  span.style.margin = "4px";
   span.addEventListener("click", () => {
     input.value += emoji;
-    emojiPicker.style.display = "none"; // hide after emoji selection
+    emojiPicker.style.display = "none";
     input.focus();
   });
   emojiPicker.appendChild(span);
 });
 
-// Toggle emoji picker visibility
-emojiBtn.addEventListener("click", (e) => {
-  e.stopPropagation(); // prevent body click from firing
-  emojiPicker.style.display =
-    emojiPicker.style.display === "flex" ? "none" : "flex";
+// Populate emoji picker for reactions
+emojiList.forEach((emoji) => {
+  const span = document.createElement("span");
+  span.textContent = emoji;
+  span.addEventListener("click", () => {
+    const msgId = reactionPicker.getAttribute("data-msg-id");
+    if (msgId) {
+      socket.emit("addReaction", { messageId: msgId, emoji });
+      reactionPicker.style.display = "none";
+    }
+  });
+  reactionPicker.appendChild(span);
 });
 
-// Close emoji picker when clicking outside
-document.addEventListener("click", (e) => {
-  if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) {
-    emojiPicker.style.display = "none";
+socket.on("reactionAdded", ({ messageId, emoji }) => {
+  const target = document.getElementById(`reactions-${messageId}`);
+  if (target) {
+    target.innerHTML += `${emoji} `;
   }
-});
-
-// ========== ✅ Message Sending ==========
-form.addEventListener("submit", (e) => {
-  e.preventDefault();
-  const text = input.value.trim();
-  if (text) {
-    socket.emit("chatMessage", text);
-    input.value = "";
-    input.focus();
-  }
-});
-
-// ========== ✅ Show Incoming Messages ==========
-socket.on("message", (data) => {
-  const div = document.createElement("div");
-  div.innerHTML = `<strong>${data.user}</strong> <span style="color:gray">${data.time}</span>: ${data.text}`;
-  messages.appendChild(div);
-  messages.scrollTop = messages.scrollHeight;
-});
-
-// ========== ✅ Typing Indicator ==========
-input.addEventListener("input", () => {
-  socket.emit("typing", input.value.trim().length > 0);
-});
-
-socket.on("typing", (text) => {
-  typing.innerText = text;
-});
-
-// ========== ✅ Clear Chat ==========
-document.getElementById("clear-btn").addEventListener("click", () => {
-  messages.innerHTML = "";
-  typing.innerText = "";
 });
