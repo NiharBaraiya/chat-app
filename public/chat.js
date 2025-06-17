@@ -61,7 +61,7 @@ input.addEventListener("input", () => {
   clearTimeout(typingTimeout);
   typingTimeout = setTimeout(() => {
     socket.emit("typing", false);
-  }, 1000);
+  }, 100000);
 });
 
 socket.on("typing", (text) => {
