@@ -113,34 +113,40 @@ button#clearChat:hover {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-body {
-  background: linear-gradient(135deg, #74ebd5, #ACB6E5);
-  min-height: 100vh;
+#emoji-panel {
+  max-height: 180px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.emoji-container {
+  position: relative;
+  display: inline-block;
+}
+
+#emoji-panel {
+  position: absolute;
+  bottom: 40px;
+  left: 0;
+  background: #fff;
+  border: 1px solid #ddd;
+  padding: 5px;
+  border-radius: 5px;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: 30px 20px;
-  animation: fadeInBody 0.6s ease;
+  flex-wrap: wrap;
+  gap: 5px;
+  max-width: 200px;
+  z-index: 999;
 }
 
-/* ==== TITLE ==== */
-h2 {
-  color: #2563eb;
-  font-weight: bold;
-  margin-bottom: 20px;
-  font-size: 24px;
-  text-align: center;
+#emoji-panel button {
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
 }
 
-.chat-message {
-  max-width: 70%;
-  margin: 10px;
-  padding: 10px;
-  border-radius: 10px;
-  background-color: #007bff; /* Blue */
-  color: white;
-  word-wrap: break-word;
+#emoji-panel button:hover {
+  transform: scale(1.2);
 }
 
 .sender {
