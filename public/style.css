@@ -74,6 +74,28 @@ h2 {
   padding: 6px 10px;
   gap: 8px;
 }
+#emoji-picker {
+  display: none; /* Hidden by default */
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  max-height: 150px;
+  overflow-y: auto;
+  margin-bottom: 10px;
+}
+
+#emoji-picker span {
+  cursor: pointer;
+  font-size: 24px;
+  transition: transform 0.1s ease;
+}
+
+#emoji-picker span:hover {
+  transform: scale(1.2);
+}
 
 #msg {
   flex: 1;
