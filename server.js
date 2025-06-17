@@ -143,6 +143,12 @@ function getCurrentTime() {
   };
   return now.toLocaleTimeString('en-IN', options);
 }
+socket.on("addReaction", ({ messageId, emoji }) => {
+  const user = users[socket.id];
+  if (user) {
+    io.to(user.room).emit("reactionAdded", { messageId, emoji });
+  }
+});
 
 http.listen(PORT, () => {
   console.log(`✅ Server running at http://localhost:${PORT}`);
