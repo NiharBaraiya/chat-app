@@ -79,26 +79,34 @@ io.on("connection", (socket) => {
     }
   });
 
+  // ✅ File Upload
   socket.on("fileUpload", ({ fileName, fileData, fileType }) => {
-  const user = users[socket.id];
-  if (user) {
-    const time = new Date().toLocaleTimeString('en-IN', {
-      timeZone: 'Asia/Kolkata',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    });
+    const user = users[socket.id];
+    if (user) {
+      const time = new Date().toLocaleTimeString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      });
 
-    io.to(user.room).emit("fileShared", {
-      user: user.name,
-      fileName,
-      fileData,
-      fileType,
-      time,
-    });
-  }
-});
+      io.to(user.room).emit("fileShared", {
+        user: user.name,
+        fileName,
+        fileData,
+        fileType,
+        time,
+      });
+    }
+  });
 
+  // ✅ Handle emoji reaction
+  socket.on("addReaction", ({ messageId, emoji }) => {
+    const user = users[socket.id];
+    if (user) {
+      io.to(user.room).emit("reactionAdded", { messageId, emoji });
+    }
+  });
 
   // ✅ Handle disconnect
   socket.on("disconnect", () => {
@@ -125,6 +133,7 @@ io.on("connection", (socket) => {
   });
 });
 
+// ✅ Format message helper
 function formatMessage(user, text) {
   return {
     user,
@@ -133,6 +142,7 @@ function formatMessage(user, text) {
   };
 }
 
+// ✅ Get current time in IST format
 function getCurrentTime() {
   const now = new Date();
   const options = {
@@ -143,13 +153,8 @@ function getCurrentTime() {
   };
   return now.toLocaleTimeString('en-IN', options);
 }
-socket.on("addReaction", ({ messageId, emoji }) => {
-  const user = users[socket.id];
-  if (user) {
-    io.to(user.room).emit("reactionAdded", { messageId, emoji });
-  }
-});
 
+// ✅ Start server
 http.listen(PORT, () => {
   console.log(`✅ Server running at http://localhost:${PORT}`);
 });
