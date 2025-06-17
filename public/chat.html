@@ -5,20 +5,67 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Chat Room</title>
   <link rel="stylesheet" href="style.css" />
- 
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+    #chat-container { display: flex; flex-direction: column; height: 100vh; }
+
+    #messages {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      border-bottom: 1px solid #ccc;
+    }
+
+    .message {
+      margin-bottom: 10px;
+    }
+
+    .timestamp {
+      color: #888;
+      font-size: 0.85em;
+      margin-right: 5px;
+    }
+
+    #emoji-picker {
+      display: none;
+      flex-wrap: wrap;
+      gap: 5px;
+      padding: 10px;
+      background: #f1f1f1;
+      border-top: 1px solid #ccc;
+    }
+
+    #emoji-picker span {
+      cursor: pointer;
+      font-size: 20px;
+      padding: 3px;
+    }
+
+    #chatForm {
+      display: flex;
+      gap: 5px;
+      padding: 10px;
+      border-top: 1px solid #ccc;
+      background: #fff;
+    }
+
+    #msg { flex: 1; padding: 6px; }
+    button { padding: 6px 12px; cursor: pointer; }
+  </style>
 </head>
 <body>
 
 <div id="chat-container">
   <div id="messages"></div>
 
+  <!-- Emoji List -->
   <div id="emoji-picker"></div>
 
+  <!-- Chat Form -->
   <form id="chatForm">
     <button type="button" id="emoji-btn">😀</button>
     <input type="text" id="msg" autocomplete="off" placeholder="Type a message..." />
     <button type="submit">📤</button>
-    <button type="button" id="clear-btn">🧹</button>
   </form>
 </div>
 
