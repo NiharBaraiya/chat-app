@@ -25,18 +25,33 @@
       <p id="typing"></p>
 
       <!-- ✅ Chat Form -->
-      <form id="chatForm">
-        <input id="msg" type="text" placeholder="Your message..." autocomplete="off" required />
-           <!-- ✅ File Upload -->
-      <div class="upload-section">
-        <label for="fileInput">📁 Send File:</label>
-        <input type="file" id="fileInput" />
-        <progress id="uploadProgress" value="0" max="100" style="display:none;"></progress>
-      </div>
+    <!-- ✅ Chat Form -->
+<form id="chatForm">
+  <div class="input-bar">
 
-        <button type="submit">Send</button>
-        <button type="button" id="clearChat" class="clear-btn">🧹 Clear Chat</button>
-      </form>
+    <!-- ✅ Message Input -->
+    <div class="input-group">
+      <input id="msg" type="text" placeholder="Your message..." autocomplete="off" required />
+    </div>
+
+    <!-- ✅ Emoji Picker -->
+    <div class="emoji-container">
+      <button type="button" id="emoji-btn" title="Insert Emoji">😄</button>
+      <div id="emoji-panel" class="emoji-panel" style="display: none;"></div>
+    </div>
+
+    <!-- ✅ File Upload -->
+    <label class="file-upload" title="Upload File">
+      📁 Upload
+      <input type="file" id="fileInput" hidden />
+    </label>
+    <progress id="uploadProgress" value="0" max="100" style="display:none;"></progress>
+
+    <!-- ✅ Buttons -->
+    <button type="submit">Send</button>
+    <button type="button" id="clearChat" class="clear-btn">🧹 Clear Chat</button>
+  </div>
+</form>
 
    
     </div>
