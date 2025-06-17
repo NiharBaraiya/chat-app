@@ -4,6 +4,7 @@ const app = express();
 const http = require("http").createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(http);
+const crypto = require("crypto"); // ✅ Needed for message IDs
 const PORT = process.env.PORT || 3000;
 
 // ✅ Serve static files from /public but DON'T auto-serve index.html
@@ -19,7 +20,7 @@ app.get("/", (req, res) => {
   }
 });
 
-// Optional: fallback routes
+// Optional fallback routes
 app.get("/simple", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "simple.html"));
 });
@@ -29,11 +30,11 @@ app.get("/index", (req, res) => {
 });
 
 // ========== ✅ Socket.io logic ==========
-const users = {};         // Track socket.id → user
-const roomUsers = {};     // Track room → Set of usernames
+const users = {};         // socket.id → user info
+const roomUsers = {};     // room → Set of usernames
 
 io.on("connection", (socket) => {
-  // ✅ Handle joinRoom event
+  // ✅ Handle joinRoom
   socket.on("joinRoom", ({ name, room }) => {
     const currentUser = { name, room };
     users[socket.id] = currentUser;
@@ -52,21 +53,20 @@ io.on("connection", (socket) => {
 
     socket.emit("message", formatMessage("System", `Welcome ${name}!`));
 
-    socket.broadcast
-      .to(room)
-      .emit("message", formatMessage("System", `${name} joined the chat`));
+    socket.broadcast.to(room).emit("message", formatMessage("System", `${name} joined the chat.`));
 
     io.to(room).emit("roomUsers", {
       room,
-      users: [...roomUsers[room]].map((name) => ({ name })),
+      users: [...roomUsers[room]].map(name => ({ name })),
     });
   });
 
-  // ✅ Handle incoming messages
+  // ✅ Handle chat message
   socket.on("chatMessage", (text) => {
     const user = users[socket.id];
     if (user) {
-      io.to(user.room).emit("message", formatMessage(user.name, text));
+      const message = formatMessage(user.name, text);
+      io.to(user.room).emit("message", message);
     }
   });
 
@@ -74,22 +74,16 @@ io.on("connection", (socket) => {
   socket.on("typing", (status) => {
     const user = users[socket.id];
     if (user) {
-      const text = status ? `${user.name} is typing...` : "";
-      socket.to(user.room).emit("typing", text);
+      const typingText = status ? `${user.name} is typing...` : "";
+      socket.to(user.room).emit("typing", typingText);
     }
   });
 
-  // ✅ File Upload
+  // ✅ Handle file upload
   socket.on("fileUpload", ({ fileName, fileData, fileType }) => {
     const user = users[socket.id];
     if (user) {
-      const time = new Date().toLocaleTimeString('en-IN', {
-        timeZone: 'Asia/Kolkata',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      });
-
+      const time = getCurrentTime();
       io.to(user.room).emit("fileShared", {
         user: user.name,
         fileName,
@@ -117,11 +111,10 @@ io.on("connection", (socket) => {
 
       if (roomUsers[user.room]) {
         roomUsers[user.room].delete(user.name);
-
         if (roomUsers[user.room].size > 0) {
           io.to(user.room).emit("roomUsers", {
             room: user.room,
-            users: [...roomUsers[user.room]].map((name) => ({ name })),
+            users: [...roomUsers[user.room]].map(name => ({ name })),
           });
         } else {
           delete roomUsers[user.room];
@@ -133,25 +126,25 @@ io.on("connection", (socket) => {
   });
 });
 
-// ✅ Format message helper
+// ✅ Format message with unique ID and timestamp
 function formatMessage(user, text) {
   return {
+    id: crypto.randomUUID(),  // 🔥 Unique message ID
     user,
     text,
     time: getCurrentTime()
   };
 }
 
-// ✅ Get current time in IST format
+// ✅ Get current IST time
 function getCurrentTime() {
   const now = new Date();
-  const options = {
-    timeZone: 'Asia/Kolkata',
-    hour: '2-digit',
-    minute: '2-digit',
+  return now.toLocaleTimeString("en-IN", {
+    timeZone: "Asia/Kolkata",
+    hour: "2-digit",
+    minute: "2-digit",
     hour12: false,
-  };
-  return now.toLocaleTimeString('en-IN', options);
+  });
 }
 
 // ✅ Start server
