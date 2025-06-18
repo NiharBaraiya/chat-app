@@ -18,7 +18,12 @@
 
 <!-- Message form -->
 <form id="chatForm">
-  <button type="button" id="emoji-btn">😀</button>
+<!-- Emoji Button + Emoji Picker Container -->
+<div class="emoji-wrapper">
+  <button id="emojiToggle" class="emoji-btn">😊</button>
+  <div id="emojiList" class="emoji-list"></div>
+</div>
+
   <input type="text" id="msg" placeholder="Type a message..." autocomplete="off" />
   <button type="submit">📤</button>
   <button type="button" id="clear-btn">🧹</button>
