@@ -77,6 +77,22 @@ h2 {
   margin-top: 5px;
   display: none;
 }
+#pinned-messages {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #fff8dc;
+  padding: 10px 15px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  max-width: 300px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  z-index: 999;
+}
+.pinned {
+  font-size: 14px;
+  line-height: 1.4;
+}
 
 .message-options button {
   margin-right: 5px;
