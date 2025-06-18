@@ -88,6 +88,8 @@ socket.on("message", (message) => {
   } else if (message.user === name) {
     li.classList.add("sender");
     li.innerHTML = `<span class="timestamp">${message.time}</span> <strong>You</strong>: <span class="msg-text">${message.text}</span>`;
+    // ✅ Send seen event for own messages
+    socket.emit("seenMessage", message.id);
   } else {
     li.classList.add("receiver");
     li.innerHTML = `<span class="timestamp">${message.time}</span> <strong>${message.user}</strong>: <span class="msg-text">${message.text}</span>`;
@@ -95,6 +97,17 @@ socket.on("message", (message) => {
 
   messages.appendChild(li);
   messages.scrollTop = messages.scrollHeight;
+});
+
+// ✅ Message seen
+socket.on("messageSeen", (messageId) => {
+  const msgElem = document.getElementById(messageId);
+  if (msgElem && msgElem.classList.contains("sender")) {
+    const seenMark = document.createElement("span");
+    seenMark.className = "seen-check";
+    seenMark.textContent = " ✔✔";
+    msgElem.appendChild(seenMark);
+  }
 });
 
 // ✅ Message edited
@@ -118,10 +131,6 @@ socket.on("messageDeleted", (messageId) => {
 
 // ✅ Message pinned
 socket.on("messagePinned", (msg) => {
-  // 1. Update pinned container at bottom-right
-
-
-  // 2. Show pin icon 📌 on the pinned message in the chat area
   const originalMsg = document.getElementById(msg.id);
   if (originalMsg && !originalMsg.classList.contains("pinned-highlight")) {
     const pinIcon = document.createElement("span");
