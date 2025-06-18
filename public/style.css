@@ -125,6 +125,16 @@ h2 {
   display: block;
   margin-top: 5px;
 }
+.download-link {
+  display: inline-block;
+  margin-top: 5px;
+  text-decoration: none;
+  color: #007bff;
+  font-weight: bold;
+}
+.download-link:hover {
+  text-decoration: underline;
+}
 
 /* Context Menu Styling */
 .context-menu {
