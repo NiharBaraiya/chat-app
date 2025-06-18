@@ -73,57 +73,83 @@ h2 {
   transform: scale(1.3);
 }
 
-.message-options {
-  margin-top: 5px;
-  display: none;
-}
-#pinned-messages {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  background: #fff8dc;
-  padding: 10px 15px;
-  border: 1px solid #ccc;
-  border-radius: 10px;
-  max-width: 300px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
-  z-index: 999;
-}
-.pinned {
-  font-size: 14px;
-  line-height: 1.4;
-}
-
-.message-options button {
-  margin-right: 5px;
-  padding: 2px 6px;
-  font-size: 0.9em;
-  cursor: pointer;
-  border-radius: 4px;
-  border: 1px solid #ccc;
-  background: #f3f3f3;
-  transition: background 0.3s ease;
-}
-
-.message-options button:hover {
-  background: #ddd;
-}
-.pin-indicator {
-  font-size: 1.2em;
-  color: goldenrod;
-}
+/* Chat message base */
 .chat-message {
   position: relative;
-  padding-right: 30px;
+  padding: 10px 15px;
+  margin: 10px;
+  border-radius: 20px;
+  max-width: 60%;
+  line-height: 1.4;
+  word-wrap: break-word;
+  transition: background-color 0.3s ease;
 }
 
-.pin-indicator {
-  position: absolute;
-  top: 8px;
-  right: 12px;
-  font-size: 16px;
-  color: #ff9900;
+/* Sent message */
+.chat-message.sender {
+  background-color: #007bff;
+  color: white;
+  align-self: flex-end;
+  margin-left: auto;
 }
+
+/* Received message */
+.chat-message.receiver {
+  background-color: #f1f0f0;
+  color: #333;
+  align-self: flex-start;
+  margin-right: auto;
+}
+
+/* System message */
+.chat-message.system-msg {
+  background-color: #28a745;
+  color: white;
+  font-weight: bold;
+  text-align: left;
+}
+
+/* Timestamp styling */
+.chat-message .timestamp {
+  font-size: 0.75rem;
+  opacity: 0.7;
+  display: block;
+  margin-top: 5px;
+}
+
+/* Context Menu Styling */
+.context-menu {
+  position: absolute;
+  z-index: 9999;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  padding: 0;
+  width: 100px;
+}
+
+.context-menu button {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s ease;
+}
+
+.context-menu button:hover {
+  background-color: #f5f5f5;
+}
+
+/* Optional: emoji in context menu */
+.context-menu button::before {
+  margin-right: 6px;
+}
+
 
 
 /* ==== MESSAGES ==== */
