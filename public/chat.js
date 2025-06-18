@@ -27,7 +27,7 @@ form.addEventListener("submit", function (e) {
   const message = input.value.trim();
   if (message) {
     const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    socket.emit("chatMessage", { msg: message, id });
+    socket.emit("chatMessage", { text: message, id });
     input.value = "";
     input.focus();
   }
