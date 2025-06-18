@@ -27,13 +27,11 @@ app.get("/index", (req, res) => {
 });
 
 // 🔁 In-memory stores
-const users = {};         // socket.id → { name, room }
-const roomUsers = {};     // room → Set of usernames
-const messages = {};      // messageId → message object
+const users = {};
+const roomUsers = {};
+const messages = {};
 
 io.on("connection", (socket) => {
-
-  // ✅ Join Room
   socket.on("joinRoom", ({ name, room }) => {
     const currentUser = { name, room };
     users[socket.id] = currentUser;
@@ -57,7 +55,6 @@ io.on("connection", (socket) => {
     });
   });
 
-  // ✅ Send Message
   socket.on("chatMessage", (text) => {
     const user = users[socket.id];
     if (user) {
@@ -72,7 +69,6 @@ io.on("connection", (socket) => {
     }
   });
 
-  // ✅ Seen Message (🆕)
   socket.on("seenMessage", (messageId) => {
     const user = users[socket.id];
     const msg = messages[messageId];
@@ -84,7 +80,6 @@ io.on("connection", (socket) => {
     }
   });
 
-  // ✅ Typing Indicator
   socket.on("typing", (status) => {
     const user = users[socket.id];
     if (user) {
@@ -93,7 +88,6 @@ io.on("connection", (socket) => {
     }
   });
 
-  // ✅ File Upload
   socket.on("fileUpload", ({ fileName, fileData, fileType }) => {
     const user = users[socket.id];
     if (user) {
@@ -108,7 +102,6 @@ io.on("connection", (socket) => {
     }
   });
 
-  // ✅ (Future) Emoji Reaction
   socket.on("addReaction", ({ messageId, emoji }) => {
     const user = users[socket.id];
     if (user) {
@@ -116,7 +109,6 @@ io.on("connection", (socket) => {
     }
   });
 
-  // ✅ Edit Message
   socket.on("editMessage", ({ messageId, newText }) => {
     const user = users[socket.id];
     const msg = messages[messageId];
@@ -128,7 +120,6 @@ io.on("connection", (socket) => {
     }
   });
 
-  // ✅ Delete Message
   socket.on("deleteMessage", (messageId) => {
     const user = users[socket.id];
     const msg = messages[messageId];
@@ -140,7 +131,6 @@ io.on("connection", (socket) => {
     }
   });
 
-  // ✅ Pin Message
   socket.on("pinMessage", (messageId) => {
     const user = users[socket.id];
     const msg = messages[messageId];
@@ -149,7 +139,6 @@ io.on("connection", (socket) => {
     io.to(user.room).emit("messagePinned", msg);
   });
 
-  // ✅ Disconnect
   socket.on("disconnect", () => {
     const user = users[socket.id];
     if (user) {
@@ -173,7 +162,6 @@ io.on("connection", (socket) => {
   });
 });
 
-// ✅ Format Message Utility
 function formatMessage(user, text) {
   const message = {
     id: crypto.randomUUID(),
@@ -185,7 +173,6 @@ function formatMessage(user, text) {
   return message;
 }
 
-// ✅ IST Time Formatter
 function getCurrentTime() {
   return new Date().toLocaleTimeString("en-IN", {
     timeZone: "Asia/Kolkata",
@@ -195,8 +182,6 @@ function getCurrentTime() {
   });
 }
 
-// ✅ Start Server
 http.listen(PORT, () => {
   console.log(`✅ Server running at http://localhost:${PORT}`);
 });
-
