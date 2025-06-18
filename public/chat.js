@@ -26,7 +26,8 @@ form.addEventListener("submit", function (e) {
   e.preventDefault();
   const message = input.value.trim();
   if (message) {
-    socket.emit("chatMessage", message);
+    const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    socket.emit("chatMessage", { msg: message, id });
     input.value = "";
     input.focus();
   }
@@ -39,7 +40,7 @@ messages.addEventListener("contextmenu", (e) => {
   if (!li) return;
 
   const messageId = li.dataset.id;
-  const currentText = li.innerText.split(':').slice(1).join(':').trim();
+  const currentText = li.dataset.text;
   if (!messageId) return;
 
   const menu = document.createElement("div");
@@ -74,6 +75,24 @@ messages.addEventListener("contextmenu", (e) => {
   };
 });
 
+// ✅ Seen/Unseen logic with IntersectionObserver
+const observer = new IntersectionObserver(
+  (entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        const msgElem = entry.target;
+        const msgId = msgElem.dataset.id;
+        const isReceiver = msgElem.classList.contains("receiver");
+        if (isReceiver && msgId) {
+          socket.emit("seenMessage", msgId);
+          observer.unobserve(msgElem);
+        }
+      }
+    });
+  },
+  { threshold: 1.0 }
+);
+
 // ✅ Receive message
 socket.on("message", (message) => {
   const li = document.createElement("li");
@@ -87,12 +106,11 @@ socket.on("message", (message) => {
     li.innerText = message.text;
   } else if (message.user === name) {
     li.classList.add("sender");
-    li.innerHTML = `<span class="timestamp">${message.time}</span> <strong>You</strong>: <span class="msg-text">${message.text}</span>`;
-    // ✅ Send seen event for own messages
-    socket.emit("seenMessage", message.id);
+    li.innerHTML = `<span class="timestamp">${message.time}</span> <strong>You</strong>: <span class="msg-text">${message.text}</span><span class="seen-check" id="seen-${message.id}"> ✔</span>`;
   } else {
     li.classList.add("receiver");
     li.innerHTML = `<span class="timestamp">${message.time}</span> <strong>${message.user}</strong>: <span class="msg-text">${message.text}</span>`;
+    observer.observe(li);
   }
 
   messages.appendChild(li);
@@ -101,12 +119,10 @@ socket.on("message", (message) => {
 
 // ✅ Message seen
 socket.on("messageSeen", (messageId) => {
-  const msgElem = document.getElementById(messageId);
-  if (msgElem && msgElem.classList.contains("sender")) {
-    const seenMark = document.createElement("span");
-    seenMark.className = "seen-check";
-    seenMark.textContent = " ✔✔";
-    msgElem.appendChild(seenMark);
+  const span = document.getElementById(`seen-${messageId}`);
+  if (span) {
+    span.textContent = " ✔✔";
+    span.style.color = "blue";
   }
 });
 
