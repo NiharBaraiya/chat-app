@@ -72,6 +72,15 @@ h2 {
 .emoji-panel .emoji-btn:hover {
   transform: scale(1.3);
 }
+#messages {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  max-height: 500px;
+}
 
 /* Chat message base */
 .chat-message {
