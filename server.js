@@ -26,9 +26,10 @@ app.get("/index", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-const users = {};         // socket.id → user info
+// 🔁 In-memory stores
+const users = {};         // socket.id → { name, room }
 const roomUsers = {};     // room → Set of usernames
-const messages = {};      // messageId → message data
+const messages = {};      // messageId → message object
 
 io.on("connection", (socket) => {
 
@@ -56,17 +57,22 @@ io.on("connection", (socket) => {
     });
   });
 
-  // ✅ Chat message
+  // ✅ Send Message
   socket.on("chatMessage", (text) => {
     const user = users[socket.id];
     if (user) {
-      const message = formatMessage(user.name, text);
+      const message = {
+        id: crypto.randomUUID(),
+        user: user.name,
+        text,
+        time: getCurrentTime()
+      };
       messages[message.id] = message;
       io.to(user.room).emit("message", message);
     }
   });
 
-  // ✅ Typing
+  // ✅ Typing Indicator
   socket.on("typing", (status) => {
     const user = users[socket.id];
     if (user) {
@@ -75,7 +81,7 @@ io.on("connection", (socket) => {
     }
   });
 
-  // ✅ File upload
+  // ✅ File Upload
   socket.on("fileUpload", ({ fileName, fileData, fileType }) => {
     const user = users[socket.id];
     if (user) {
@@ -90,7 +96,7 @@ io.on("connection", (socket) => {
     }
   });
 
-  // ✅ Emoji reaction (future use)
+  // ✅ (Future) Emoji Reaction
   socket.on("addReaction", ({ messageId, emoji }) => {
     const user = users[socket.id];
     if (user) {
@@ -98,33 +104,37 @@ io.on("connection", (socket) => {
     }
   });
 
-  // ✅ Edit message
+  // ✅ Edit Message
   socket.on("editMessage", ({ messageId, newText }) => {
     const user = users[socket.id];
     const msg = messages[messageId];
-    if (user && msg && msg.user === user.name) {
+    if (!msg || !user) return;
+
+    if (msg.user === user.name) {
       msg.text = newText;
       io.to(user.room).emit("messageEdited", { messageId, newText });
     }
   });
 
-  // ✅ Delete message
+  // ✅ Delete Message
   socket.on("deleteMessage", (messageId) => {
     const user = users[socket.id];
     const msg = messages[messageId];
-    if (user && msg && msg.user === user.name) {
+    if (!msg || !user) return;
+
+    if (msg.user === user.name) {
       delete messages[messageId];
       io.to(user.room).emit("messageDeleted", messageId);
     }
   });
 
-  // ✅ Pin message
+  // ✅ Pin Message
   socket.on("pinMessage", (messageId) => {
     const user = users[socket.id];
     const msg = messages[messageId];
-    if (user && msg) {
-      io.to(user.room).emit("messagePinned", msg);
-    }
+    if (!msg || !user) return;
+
+    io.to(user.room).emit("messagePinned", msg);
   });
 
   // ✅ Disconnect
@@ -151,7 +161,7 @@ io.on("connection", (socket) => {
   });
 });
 
-// ✅ Format message with UUID
+// ✅ Format Message Utility
 function formatMessage(user, text) {
   const message = {
     id: crypto.randomUUID(),
@@ -163,7 +173,7 @@ function formatMessage(user, text) {
   return message;
 }
 
-// ✅ IST timestamp
+// ✅ IST Time Formatter
 function getCurrentTime() {
   return new Date().toLocaleTimeString("en-IN", {
     timeZone: "Asia/Kolkata",
@@ -173,7 +183,7 @@ function getCurrentTime() {
   });
 }
 
-// ✅ Start server
+// ✅ Start Server
 http.listen(PORT, () => {
   console.log(`✅ Server running at http://localhost:${PORT}`);
 });
