@@ -40,41 +40,38 @@ h2 {
   flex-direction: column;
   gap: 20px;
 }
-/* 🟩 Style for emoji panel container */
 .emoji-panel {
-  display: none; /* initially hidden */
   position: absolute;
   bottom: 55px;
   left: 0;
-  background-color: #fff;
+  display: none;
+  background-color: #ffffff;
   border: 1px solid #ccc;
   border-radius: 10px;
   padding: 10px;
-  width: 250px;
+  width: 250px; /* Adjust width to control row length */
   max-height: 200px;
   overflow-y: auto;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-
-  /* 🔥 This arranges emojis in horizontal grid rows */
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(30px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(24px, 1fr));
   gap: 6px;
   z-index: 1000;
 }
 
-/* 🟩 Style for emoji buttons */
-.emoji-btn {
-  background: transparent;
+.emoji-panel .emoji-btn {
+  font-size: 20px;
   border: none;
+  background: transparent;
   cursor: pointer;
-  font-size: 22px;
   padding: 4px;
-  width: 30px;
-  height: 30px;
   text-align: center;
-  line-height: 1;
+  transition: transform 0.2s;
 }
 
+.emoji-panel .emoji-btn:hover {
+  transform: scale(1.3);
+}
 
 
 
