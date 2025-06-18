@@ -20,12 +20,10 @@ if (name && room) {
   roomNameElem.innerText = `${room} Room`;
 }
 
-form.addEventListener("submit", function (e) {
+form.addEventListener("submit", (e) => {
   e.preventDefault();
-  const message = input.value.trim();
-  if (message) {
-    const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    socket.emit("chatMessage", { text: message, id });
+  if (input.value.trim()) {
+    socket.emit("chatMessage", input.value);
     input.value = "";
     input.focus();
   }
@@ -105,12 +103,12 @@ socket.on("message", (message) => {
   } else {
     li.classList.add("receiver");
     li.innerHTML = `<strong>${message.user}:</strong> ${message.text}`;
-    observer.observe(li);
   }
 
   messages.appendChild(li);
   messages.scrollTop = messages.scrollHeight;
 });
+
 
 socket.on("messageSeen", (messageId) => {
   const span = document.getElementById(`seen-${messageId}`);
