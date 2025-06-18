@@ -9,7 +9,6 @@ const form = document.getElementById("chatForm");
 const input = document.getElementById("msg");
 const emojiBtn = document.getElementById("emoji-btn");
 const emojiPicker = document.getElementById("emoji-picker");
-const reactionPicker = document.getElementById("reaction-picker");
 const clearBtn = document.getElementById("clear-btn");
 
 document.getElementById("msg").focus();
@@ -32,6 +31,7 @@ socket.on("message", (message) => {
   messages.scrollTop = messages.scrollHeight;
 });
 
+// Form submit (send message)
 form.addEventListener("submit", (e) => {
   e.preventDefault();
   const msg = input.value.trim();
@@ -41,55 +41,38 @@ form.addEventListener("submit", (e) => {
   }
 });
 
+// Clear all messages
 clearBtn.addEventListener("click", () => {
   messages.innerHTML = "";
 });
 
-emojiBtn.addEventListener("click", () => {
-  // Show emoji picker for input box
-  emojiPicker.style.display = emojiPicker.style.display === "block" ? "none" : "block";
-  reactionPicker.style.display = "none";
-});
-
+// Show emoji picker when 😊 button clicked
 messages.addEventListener("click", (e) => {
   if (e.target.classList.contains("react-btn")) {
     const msgId = e.target.dataset.id;
-    reactionPicker.setAttribute("data-msg-id", msgId);
-    reactionPicker.style.display = "block";
-    emojiPicker.style.display = "none";
-    reactionPicker.scrollIntoView({ behavior: "smooth" });
+    emojiPicker.setAttribute("data-msg-id", msgId);
+    emojiPicker.style.display = "block";
+    emojiPicker.scrollIntoView({ behavior: "smooth" });
   }
 });
 
 // Emoji list
 const emojiList = ["😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","😉","😍","😘","😋","😛","😜","🤪","😝","🤗","🤫","🤔","😐","😑","😶","😏","😒","🙄","😬","🥵","🥶","😎","🤓","🧐","😕","🙁","😮","😲","😳","🥺","😢","😭","😱","😖","😞","😓","😫","🥱","😤","😡","😠","🤬"];
 
-// Populate emoji picker for input
 emojiList.forEach((emoji) => {
   const span = document.createElement("span");
   span.textContent = emoji;
   span.addEventListener("click", () => {
-    input.value += emoji;
-    emojiPicker.style.display = "none";
-    input.focus();
+    const msgId = emojiPicker.getAttribute("data-msg-id");
+    if (msgId) {
+      socket.emit("addReaction", { messageId: msgId, emoji });
+      emojiPicker.style.display = "none";
+    }
   });
   emojiPicker.appendChild(span);
 });
 
-// Populate emoji picker for reactions
-emojiList.forEach((emoji) => {
-  const span = document.createElement("span");
-  span.textContent = emoji;
-  span.addEventListener("click", () => {
-    const msgId = reactionPicker.getAttribute("data-msg-id");
-    if (msgId) {
-      socket.emit("addReaction", { messageId: msgId, emoji });
-      reactionPicker.style.display = "none";
-    }
-  });
-  reactionPicker.appendChild(span);
-});
-
+// Reaction handler
 socket.on("reactionAdded", ({ messageId, emoji }) => {
   const target = document.getElementById(`reactions-${messageId}`);
   if (target) {
