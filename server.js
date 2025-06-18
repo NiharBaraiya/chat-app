@@ -26,7 +26,6 @@ app.get("/index", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// 🔁 In-memory stores
 const users = {};
 const roomUsers = {};
 const messages = {};
@@ -61,7 +60,7 @@ io.on("connection", (socket) => {
       const message = {
         id: crypto.randomUUID(),
         user: user.name,
-        text,
+        text: typeof text === "string" ? text : JSON.stringify(text),
         time: getCurrentTime()
       };
       messages[message.id] = message;
@@ -166,7 +165,7 @@ function formatMessage(user, text) {
   const message = {
     id: crypto.randomUUID(),
     user,
-    text,
+    text: typeof text === "string" ? text : JSON.stringify(text),
     time: getCurrentTime()
   };
   messages[message.id] = message;
