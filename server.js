@@ -95,6 +95,15 @@ io.on("connection", (socket) => {
       });
     }
   });
+socket.on("fileUpload", (data) => {
+  const time = new Date().toLocaleTimeString();
+  io.to("localhost").emit("fileMessage", {
+    user: data.name,
+    fileName: data.fileName,
+    fileData: data.fileData,
+    time
+  });
+});
 
   // ✅ (Future) Emoji Reaction
   socket.on("addReaction", ({ messageId, emoji }) => {
