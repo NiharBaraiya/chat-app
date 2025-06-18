@@ -1,57 +1,27 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Chat Room</title>
-  <link rel="stylesheet" href="style.css" />
-  <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
-    #chat-container { display: flex; flex-direction: column; height: 100vh; }
-    #messages { flex: 1; padding: 10px; overflow-y: auto; border-bottom: 1px solid #ccc; }
-    .message { margin-bottom: 10px; }
-    .timestamp { color: #888; font-size: 0.85em; margin-right: 5px; }
-    .reactions { margin-top: 5px; font-size: 1.2em; }
-    #emoji-picker {
-      display: none;
-      padding: 5px;
-      border-top: 1px solid #ccc;
-      background: #f8f8f8;
-      overflow-x: auto;
-      white-space: nowrap;
-    }
-    #emoji-picker span {
-      cursor: pointer;
-      padding: 5px;
-      font-size: 20px;
-    }
-    #chatForm {
-      display: flex;
-      gap: 8px;
-      padding: 10px;
-      border-top: 1px solid #ccc;
-    }
-    #msg { flex: 1; padding: 6px; }
-    button { padding: 6px 12px; cursor: pointer; }
-  </style>
-</head>
-<body>
+<!-- ✅ Chat Form -->
+<form id="chatForm">
+  <div class="input-bar">
 
-<div id="chat-container">
-  <div id="messages"></div>
+    <!-- ✅ Message Input -->
+    <div class="input-group">
+      <input id="msg" type="text" placeholder="Your message..." autocomplete="off" required />
+    </div>
 
-  <div id="emoji-picker"></div>
+    <!-- ✅ Emoji Picker -->
+    <div class="emoji-container">
+      <button type="button" id="emoji-btn" title="Insert Emoji">😄</button>
+      <div id="emoji-panel" class="emoji-panel" style="display: none;"></div>
+    </div>
 
-  <form id="chatForm">
-    <button type="button" id="emoji-btn">😀</button>
-    <input type="text" id="msg" autocomplete="off" placeholder="Type a message..." />
-    <button type="submit">📤</button>
-    <button type="button" id="clear-btn">🧹</button>
-  </form>
-</div>
+    <!-- ✅ File Upload -->
+    <label class="file-upload" title="Upload File">
+      📁 Upload
+      <input type="file" id="fileInput" hidden />
+    </label>
+    <progress id="uploadProgress" value="0" max="100" style="display:none;"></progress>
 
-<script src="/socket.io/socket.io.js"></script>
-<script src="chat.js"></script>
-
-</body>
-</html>
+    <!-- ✅ Buttons -->
+    <button type="submit">Send</button>
+    <button type="button" id="clearChat" class="clear-btn">🧹 Clear Chat</button>
+  </div>
+</form>
