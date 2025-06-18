@@ -9,29 +9,21 @@ const form = document.getElementById("chatForm");
 const input = document.getElementById("msg");
 const emojiBtn = document.getElementById("emoji-btn");
 const emojiPicker = document.getElementById("emoji-picker");
-const clearBtn = document.getElementById("clear-btn");
-
-document.getElementById("msg").focus();
 
 socket.emit("joinRoom", { name, room });
 
 socket.on("message", (message) => {
-  const li = document.createElement("div");
-  li.className = "message";
-  li.setAttribute("data-id", message.id);
-
-  li.innerHTML = `
+  const div = document.createElement("div");
+  div.className = "message";
+  div.innerHTML = `
     <span class="timestamp">${message.time}</span>
     <strong>${message.user === name ? "You" : message.user}</strong>: ${message.text}
-    <button class="react-btn" data-id="${message.id}">😊</button>
-    <div class="reactions" id="reactions-${message.id}"></div>
   `;
-
-  messages.appendChild(li);
+  messages.appendChild(div);
   messages.scrollTop = messages.scrollHeight;
 });
 
-// Form submit (send message)
+// Handle form submit
 form.addEventListener("submit", (e) => {
   e.preventDefault();
   const msg = input.value.trim();
@@ -41,19 +33,10 @@ form.addEventListener("submit", (e) => {
   }
 });
 
-// Clear all messages
-clearBtn.addEventListener("click", () => {
-  messages.innerHTML = "";
-});
-
-// Show emoji picker when 😊 button clicked
-messages.addEventListener("click", (e) => {
-  if (e.target.classList.contains("react-btn")) {
-    const msgId = e.target.dataset.id;
-    emojiPicker.setAttribute("data-msg-id", msgId);
-    emojiPicker.style.display = "block";
-    emojiPicker.scrollIntoView({ behavior: "smooth" });
-  }
+// Toggle emoji picker
+emojiBtn.addEventListener("click", () => {
+  const isVisible = emojiPicker.style.display === "flex";
+  emojiPicker.style.display = isVisible ? "none" : "flex";
 });
 
 // Emoji list
@@ -63,19 +46,9 @@ emojiList.forEach((emoji) => {
   const span = document.createElement("span");
   span.textContent = emoji;
   span.addEventListener("click", () => {
-    const msgId = emojiPicker.getAttribute("data-msg-id");
-    if (msgId) {
-      socket.emit("addReaction", { messageId: msgId, emoji });
-      emojiPicker.style.display = "none";
-    }
+    input.value += emoji;
+    emojiPicker.style.display = "none"; // hide after click
+    input.focus();
   });
   emojiPicker.appendChild(span);
-});
-
-// Reaction handler
-socket.on("reactionAdded", ({ messageId, emoji }) => {
-  const target = document.getElementById(`reactions-${messageId}`);
-  if (target) {
-    target.innerHTML += `${emoji} `;
-  }
 });
