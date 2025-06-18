@@ -180,7 +180,7 @@ emojiList.forEach(emoji => {
 
 // Toggle emoji panel
 emojiBtn.addEventListener("click", () => {
-  emojiPanel.classList.toggle("show");
+  emojiPanel.style.display = emojiPanel.style.display === "none" ? "block" : "none";
 });
 
 // Hide panel if clicked outside
