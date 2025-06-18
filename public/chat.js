@@ -118,11 +118,21 @@ socket.on("messageDeleted", (messageId) => {
 
 // ✅ Message pinned
 socket.on("messagePinned", (msg) => {
-  const pinnedArea = document.getElementById("pinned-message");
-  if (pinnedArea) {
-    pinnedArea.innerHTML = `
+  // 1. Update pinned container at bottom-right
+  if (pinnedContainer) {
+    pinnedContainer.innerHTML = `
       📌 <strong>${msg.user}</strong>: ${msg.text} <span style="font-size: 0.8em;">(${msg.time})</span>
     `;
+  }
+
+  // 2. Show pin icon 📌 on the pinned message in the chat area
+  const originalMsg = document.getElementById(msg.id);
+  if (originalMsg && !originalMsg.classList.contains("pinned-highlight")) {
+    const pinIcon = document.createElement("span");
+    pinIcon.className = "pin-icon";
+    pinIcon.textContent = " 📌";
+    originalMsg.appendChild(pinIcon);
+    originalMsg.classList.add("pinned-highlight");
   }
 });
 
@@ -227,7 +237,8 @@ socket.on("fileShared", ({ user, fileName, fileData, fileType, time }) => {
 const emojiBtn = document.getElementById("emoji-btn");
 const emojiPanel = document.getElementById("emoji-panel");
 const emojiInput = document.getElementById("msg");
-const emojiList = [ "😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃","😉","😌","😍","😘","😗",
+const emojiList = [
+  "😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃","😉","😌","😍","😘","😗",
   "😙","😚","😋","😛","😜","🤪","😝","🤑","🤗","🤭","🤫","🤔","🤐","🤨","😐","😑","😶",
   "😏","😒","🙄","😬","🤥","😌","😔","😪","🤤","😴","😷","🤒","🤕","🤢","🤮","🤧","🥵",
   "🥶","🥴","😵","🤯","🤠","🥳","😎","🤓","🧐","😕","😟","🙁","☹️","😮","😯","😲","😳",
