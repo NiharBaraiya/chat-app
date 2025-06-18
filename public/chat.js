@@ -119,16 +119,17 @@ socket.on("messageDeleted", (messageId) => {
 // ✅ Message pinned
 socket.on("messagePinned", (msg) => {
   // 1. Update pinned container at bottom-right
-  if (pinnedContainer) {
-    pinnedContainer.innerHTML = `
-      📌 <strong>${msg.user}</strong>: ${msg.text} <span style="font-size: 0.8em;">(${msg.time})</span>
-    `;
-  }
+
 
   // 2. Show pin icon 📌 on the pinned message in the chat area
- 
-});
-
+  const originalMsg = document.getElementById(msg.id);
+  if (originalMsg && !originalMsg.classList.contains("pinned-highlight")) {
+    const pinIcon = document.createElement("span");
+    pinIcon.className = "pin-icon";
+    pinIcon.textContent = " 📌";
+    originalMsg.appendChild(pinIcon);
+    originalMsg.classList.add("pinned-highlight");
+  }
 // ✅ Typing status
 let typingTimeout;
 input.addEventListener("input", () => {
