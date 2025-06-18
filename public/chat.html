@@ -2,58 +2,75 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Room Chat</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chat Room</title>
   <link rel="stylesheet" href="style.css" />
   <style>
-    .emoji-picker {
-      max-width: 100%;
-      overflow-x: auto;
-      white-space: nowrap;
-      padding: 5px 0;
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+    #chat-container { display: flex; flex-direction: column; height: 100vh; }
+
+    #messages {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      border-bottom: 1px solid #ccc;
     }
-    .emoji-picker span {
-      font-size: 22px;
+
+    .message {
+      margin-bottom: 10px;
+    }
+
+    .timestamp {
+      color: #888;
+      font-size: 0.85em;
+      margin-right: 5px;
+    }
+
+    #emoji-picker {
+      display: none;
+      flex-wrap: wrap;
+      gap: 5px;
+      padding: 10px;
+      background: #f1f1f1;
+      border-top: 1px solid #ccc;
+    }
+
+    #emoji-picker span {
       cursor: pointer;
-      margin: 0 3px;
+      font-size: 20px;
+      padding: 3px;
     }
-    .reactions {
-      margin-top: 5px;
+
+    #chatForm {
+      display: flex;
+      gap: 5px;
+      padding: 10px;
+      border-top: 1px solid #ccc;
+      background: #fff;
     }
+
+    #msg { flex: 1; padding: 6px; }
+    button { padding: 6px 12px; cursor: pointer; }
   </style>
 </head>
 <body>
-  <div class="chat-container">
-    <!-- ✅ Sidebar for users -->
-    <aside class="sidebar">
-      <h3>👥 Users List</h3><br>
-      <ul id="user-list"></ul>
-    </aside>
 
-    <!-- ✅ Chat Area -->
-    <div class="chat-main">
-      <h2 id="room-name">Room Chat</h2>
-      <ul id="messages"></ul>
-      <p id="typing"></p>
+<div id="chat-container">
+  <div id="messages"></div>
 
-      <!-- ✅ Emoji Picker -->
-      <div class="emoji-picker" id="emoji-picker">
-        <!-- Emojis will be added here by JS -->
-      </div>
+  <!-- Emoji List -->
+  <div id="emoji-picker"></div>
 
-      <!-- ✅ Chat Form -->
-      <form id="chatForm" style="display: flex; flex-wrap: wrap; gap: 8px;">
-        <input id="msg" type="text" placeholder="Type a message..." autocomplete="off" required style="flex: 1;" />
-        <label for="fileInput">📁</label>
-        <input type="file" id="fileInput" style="width: 100px;" />
-        <button type="submit">📤</button>
-        <button type="button" id="clearChat">🧹 Clear</button>
-        <progress id="uploadProgress" value="0" max="100" style="display:none; width: 100%;"></progress>
-      </form>
-    </div>
-  </div>
+  <!-- Chat Form -->
+  <form id="chatForm">
+    <button type="button" id="emoji-btn">😀</button>
+    <input type="text" id="msg" autocomplete="off" placeholder="Type a message..." />
+    <button type="submit">📤</button>
+  </form>
+</div>
 
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="chat.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="chat.js"></script>
+
 </body>
 </html>
