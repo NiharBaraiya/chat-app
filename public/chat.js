@@ -35,13 +35,21 @@ form.addEventListener("submit", function (e) {
 socket.on("message", (message) => {
   const li = document.createElement("li");
   li.classList.add("chat-message");
+  li.setAttribute("data-id", message.id);
 
   if (message.user === "System") {
     li.classList.add("system-msg");
     li.innerText = message.text;
   } else if (message.user === name) {
     li.classList.add("sender");
-    li.innerHTML = `<span class="timestamp">${message.time}</span> <strong>You</strong>: ${message.text}`;
+    li.innerHTML = `
+      <span class="timestamp">${message.time}</span> 
+      <strong>You</strong>: <span class="message-text">${message.text}</span>
+      <span class="msg-actions">
+        <button class="edit-btn">✏️</button>
+        <button class="delete-btn">🗑️</button>
+      </span>
+    `;
   } else {
     li.classList.add("receiver");
     li.innerHTML = `<span class="timestamp">${message.time}</span> <strong>${message.user}</strong>: ${message.text}`;
@@ -49,6 +57,46 @@ socket.on("message", (message) => {
 
   messages.appendChild(li);
   messages.scrollTop = messages.scrollHeight;
+});
+
+// ✅ Edit & Delete Event Delegation
+messages.addEventListener("click", function (e) {
+  const li = e.target.closest("li[data-id]");
+  if (!li) return;
+
+  const messageId = li.getAttribute("data-id");
+  const messageSpan = li.querySelector(".message-text");
+
+  if (e.target.classList.contains("edit-btn")) {
+    const newText = prompt("✏️ Edit your message:", messageSpan?.textContent || "");
+    if (newText !== null && newText.trim()) {
+      socket.emit("editMessage", { messageId, newText: newText.trim() });
+    }
+  }
+
+  if (e.target.classList.contains("delete-btn")) {
+    const confirmDelete = confirm("🗑️ Are you sure you want to delete this message?");
+    if (confirmDelete) {
+      socket.emit("deleteMessage", messageId);
+    }
+  }
+});
+
+// ✅ Receive edited message
+socket.on("messageEdited", ({ messageId, newText }) => {
+  const li = messages.querySelector(`li[data-id="${messageId}"]`);
+  if (li) {
+    const span = li.querySelector(".message-text");
+    if (span) span.textContent = newText;
+  }
+});
+
+// ✅ Receive deleted message
+socket.on("messageDeleted", (messageId) => {
+  const li = messages.querySelector(`li[data-id="${messageId}"]`);
+  if (li) {
+    li.remove();
+  }
 });
 
 // ✅ Typing status
@@ -148,12 +196,12 @@ socket.on("fileShared", ({ user, fileName, fileData, fileType, time }) => {
   messages.appendChild(li);
   messages.scrollTop = messages.scrollHeight;
 });
+
 // ✅ Emoji Logic
 const emojiBtn = document.getElementById("emoji-btn");
 const emojiPanel = document.getElementById("emoji-panel");
 const emojiInput = document.getElementById("msg");
 
-// List of emojis to show (you can add more!)
 const emojiList = [
   "😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃","😉","😌","😍","😘","😗",
   "😙","😚","😋","😛","😜","🤪","😝","🤑","🤗","🤭","🤫","🤔","🤐","🤨","😐","😑","😶",
@@ -163,8 +211,6 @@ const emojiList = [
   "😡","😠","🤬","😈","👿"
 ];
 
-
-// Populate the emoji panel
 emojiList.forEach(emoji => {
   const btn = document.createElement("button");
   btn.textContent = emoji;
@@ -173,17 +219,15 @@ emojiList.forEach(emoji => {
   btn.addEventListener("click", () => {
     emojiInput.value += emoji;
     emojiInput.focus();
-    emojiPanel.style.display = "none"; // auto-close panel
+    emojiPanel.style.display = "none";
   });
   emojiPanel.appendChild(btn);
 });
 
-// Toggle emoji panel
 emojiBtn.addEventListener("click", () => {
   emojiPanel.style.display = emojiPanel.style.display === "none" ? "block" : "none";
 });
 
-// Hide panel if clicked outside
 document.addEventListener("click", (e) => {
   if (!emojiPanel.contains(e.target) && e.target !== emojiBtn) {
     emojiPanel.style.display = "none";
