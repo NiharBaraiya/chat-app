@@ -14,13 +14,12 @@ const clearButton = document.getElementById("clearChat");
 const fileInput = document.getElementById("fileInput");
 const uploadProgress = document.getElementById("uploadProgress");
 
-// ✅ Join room
 if (name && room) {
   socket.emit("joinRoom", { name, room });
   roomNameElem.innerText = `${room} Room`;
 }
 
-// ✅ Send message
+// ✅ Send Message
 form.addEventListener("submit", function (e) {
   e.preventDefault();
   const message = input.value.trim();
@@ -31,7 +30,7 @@ form.addEventListener("submit", function (e) {
   }
 });
 
-// ✅ Receive message
+// ✅ Receive Message
 socket.on("message", (message) => {
   const li = document.createElement("li");
   li.classList.add("chat-message");
@@ -43,13 +42,21 @@ socket.on("message", (message) => {
   } else if (message.user === name) {
     li.classList.add("sender");
     li.innerHTML = `
-      <span class="timestamp">${message.time}</span> 
+      <span class="timestamp">${message.time}</span>
       <strong>You</strong>: <span class="message-text">${message.text}</span>
-      <span class="msg-actions">
-        <button class="edit-btn">✏️</button>
-        <button class="delete-btn">🗑️</button>
-      </span>
+      <div class="message-options" style="display:none;">
+        <button class="edit-btn">✏️ Edit</button>
+        <button class="delete-btn">🗑️ Delete</button>
+      </div>
     `;
+
+    // ✅ Right-click to show edit/delete
+    li.addEventListener("contextmenu", (e) => {
+      e.preventDefault();
+      hideAllMessageOptions();
+      const options = li.querySelector(".message-options");
+      if (options) options.style.display = "block";
+    });
   } else {
     li.classList.add("receiver");
     li.innerHTML = `<span class="timestamp">${message.time}</span> <strong>${message.user}</strong>: ${message.text}`;
@@ -59,11 +66,10 @@ socket.on("message", (message) => {
   messages.scrollTop = messages.scrollHeight;
 });
 
-// ✅ Edit & Delete Event Delegation
+// ✅ Edit & Delete Actions
 messages.addEventListener("click", function (e) {
   const li = e.target.closest("li[data-id]");
   if (!li) return;
-
   const messageId = li.getAttribute("data-id");
   const messageSpan = li.querySelector(".message-text");
 
@@ -71,6 +77,7 @@ messages.addEventListener("click", function (e) {
     const newText = prompt("✏️ Edit your message:", messageSpan?.textContent || "");
     if (newText !== null && newText.trim()) {
       socket.emit("editMessage", { messageId, newText: newText.trim() });
+      hideAllMessageOptions();
     }
   }
 
@@ -78,11 +85,24 @@ messages.addEventListener("click", function (e) {
     const confirmDelete = confirm("🗑️ Are you sure you want to delete this message?");
     if (confirmDelete) {
       socket.emit("deleteMessage", messageId);
+      hideAllMessageOptions();
     }
   }
 });
 
-// ✅ Receive edited message
+// ✅ Hide options on left click or Escape key
+document.addEventListener("click", hideAllMessageOptions);
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") hideAllMessageOptions();
+});
+
+function hideAllMessageOptions() {
+  document.querySelectorAll(".message-options").forEach(opt => {
+    opt.style.display = "none";
+  });
+}
+
+// ✅ Edited Message
 socket.on("messageEdited", ({ messageId, newText }) => {
   const li = messages.querySelector(`li[data-id="${messageId}"]`);
   if (li) {
@@ -91,15 +111,13 @@ socket.on("messageEdited", ({ messageId, newText }) => {
   }
 });
 
-// ✅ Receive deleted message
+// ✅ Deleted Message
 socket.on("messageDeleted", (messageId) => {
   const li = messages.querySelector(`li[data-id="${messageId}"]`);
-  if (li) {
-    li.remove();
-  }
+  if (li) li.remove();
 });
 
-// ✅ Typing status
+// ✅ Typing
 let typingTimeout;
 input.addEventListener("input", () => {
   socket.emit("typing", true);
@@ -113,12 +131,12 @@ socket.on("typing", (text) => {
   typing.innerText = text || "";
 });
 
-// ✅ Clear chat
+// ✅ Clear Chat
 clearButton.addEventListener("click", () => {
   messages.innerHTML = "";
 });
 
-// ✅ Update user list
+// ✅ User List
 socket.on("roomUsers", ({ users }) => {
   userList.innerHTML = "";
   users.forEach((user) => {
@@ -128,12 +146,12 @@ socket.on("roomUsers", ({ users }) => {
   });
 });
 
-// ✅ File upload handler
+// ✅ File Upload
 fileInput?.addEventListener("change", () => {
   const file = fileInput.files[0];
   if (!file) return;
 
-  const maxSize = 5 * 1024 * 1024; // 5MB
+  const maxSize = 5 * 1024 * 1024;
   if (file.size > maxSize) {
     alert("❌ File too large. Max 5MB allowed.");
     return;
@@ -146,15 +164,13 @@ fileInput?.addEventListener("change", () => {
   };
   reader.onprogress = (e) => {
     if (e.lengthComputable) {
-      const percent = (e.loaded / e.total) * 100;
-      uploadProgress.value = percent;
+      uploadProgress.value = (e.loaded / e.total) * 100;
     }
   };
   reader.onload = () => {
-    const base64 = reader.result;
     socket.emit("fileUpload", {
       fileName: file.name,
-      fileData: base64,
+      fileData: reader.result,
       fileType: file.type,
     });
     uploadProgress.style.display = "none";
@@ -163,7 +179,7 @@ fileInput?.addEventListener("change", () => {
   reader.readAsDataURL(file);
 });
 
-// ✅ Receive file
+// ✅ Receive File
 socket.on("fileShared", ({ user, fileName, fileData, fileType, time }) => {
   const li = document.createElement("li");
   li.classList.add("chat-message", user === name ? "sender" : "receiver");
@@ -174,30 +190,26 @@ socket.on("fileShared", ({ user, fileName, fileData, fileType, time }) => {
   );
   const downloadUrl = URL.createObjectURL(blob);
 
-  const fileExt = fileName.split('.').pop().toLowerCase();
-  const fileIcons = {
+  const ext = fileName.split('.').pop().toLowerCase();
+  const iconMap = {
     pdf: "📄", doc: "📝", docx: "📝", txt: "📃",
     jpg: "🖼️", jpeg: "🖼️", png: "🖼️", gif: "🖼️",
     zip: "🗜️", mp4: "🎥", mp3: "🎵", default: "📁"
   };
-  const icon = fileIcons[fileExt] || fileIcons.default;
+  const icon = iconMap[ext] || iconMap.default;
 
-  let content;
-  if (fileType.startsWith("image/")) {
-    content = `
-      <a href="${downloadUrl}" download="${fileName}" target="_blank">
+  const content = fileType.startsWith("image/")
+    ? `<a href="${downloadUrl}" download="${fileName}" target="_blank">
         <img src="${downloadUrl}" alt="${fileName}" class="shared-img" />
-      </a>`;
-  } else {
-    content = `<a href="${downloadUrl}" download="${fileName}" class="file-link">${icon} ${fileName}</a>`;
-  }
+      </a>`
+    : `<a href="${downloadUrl}" download="${fileName}" class="file-link">${icon} ${fileName}</a>`;
 
   li.innerHTML = `<span class="timestamp">${time}</span> <strong>${user === name ? "You" : user}</strong>: ${content}`;
   messages.appendChild(li);
   messages.scrollTop = messages.scrollHeight;
 });
 
-// ✅ Emoji Logic
+// ✅ Emoji Picker
 const emojiBtn = document.getElementById("emoji-btn");
 const emojiPanel = document.getElementById("emoji-panel");
 const emojiInput = document.getElementById("msg");
