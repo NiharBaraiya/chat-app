@@ -126,14 +126,7 @@ socket.on("messagePinned", (msg) => {
   }
 
   // 2. Show pin icon 📌 on the pinned message in the chat area
-  const originalMsg = document.getElementById(msg.id);
-  if (originalMsg && !originalMsg.classList.contains("pinned-highlight")) {
-    const pinIcon = document.createElement("span");
-    pinIcon.className = "pin-icon";
-    pinIcon.textContent = " 📌";
-    originalMsg.appendChild(pinIcon);
-    originalMsg.classList.add("pinned-highlight");
-  }
+ 
 });
 
 // ✅ Typing status
