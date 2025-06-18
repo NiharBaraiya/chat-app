@@ -77,7 +77,7 @@ messages.addEventListener("contextmenu", (e) => {
 socket.on("message", (message) => {
   const li = document.createElement("li");
   li.classList.add("chat-message");
-  li.dataset.id = message.id;
+  li.dataset.id = message.id; // 🔥 IMPORTANT for edit/delete
   li.dataset.text = message.text;
 
   if (message.user === "System") {
@@ -114,9 +114,6 @@ socket.on("messageDeleted", (messageId) => {
 });
 
 // ✅ Message pinned
-// (Your full code remains unchanged — this is just the additional part inside the socket.on("messagePinned") block)
-
-// ✅ Message pinned
 socket.on("messagePinned", (message) => {
   const div = document.createElement("div");
   div.className = "pinned";
@@ -127,7 +124,6 @@ socket.on("messagePinned", (message) => {
   pinnedContainer.innerHTML = "";
   pinnedContainer.appendChild(div);
 
-  // Show 📌 beside message too
   const li = document.querySelector(`li.chat-message[data-id="${message.id}"]`);
   if (li && !li.querySelector(".pin-indicator")) {
     const pin = document.createElement("span");
@@ -138,7 +134,6 @@ socket.on("messagePinned", (message) => {
     li.appendChild(pin);
   }
 });
-
 
 // ✅ Typing status
 let typingTimeout;
