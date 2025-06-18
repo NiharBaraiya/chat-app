@@ -1,4 +1,29 @@
-<!-- ✅ Chat Form -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Room Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="chat-container">
+
+    <!-- ✅ Sidebar -->
+    <aside class="sidebar">
+      <h3>👥 Users List</h3>
+      <ul id="user-list"></ul>
+    </aside>
+
+    <!-- ✅ Chat Area -->
+    <div class="chat-main">
+      <h2 id="room-name">Room Chat</h2>
+
+      <!-- ✅ Messages -->
+      <ul id="messages"></ul>
+      <p id="typing"></p>
+
+    <!-- ✅ Chat Form -->
 <form id="chatForm">
   <div class="input-bar">
 
@@ -25,3 +50,8 @@
     <button type="button" id="clearChat" class="clear-btn">🧹 Clear Chat</button>
   </div>
 </form>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="chat.js"></script>
+</body>
+</html>
