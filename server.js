@@ -72,6 +72,18 @@ io.on("connection", (socket) => {
     }
   });
 
+  // ✅ Seen Message (🆕)
+  socket.on("seenMessage", (messageId) => {
+    const user = users[socket.id];
+    const msg = messages[messageId];
+    if (user && msg) {
+      const senderSocketId = Object.keys(users).find(id => users[id].name === msg.user && users[id].room === user.room);
+      if (senderSocketId) {
+        io.to(senderSocketId).emit("messageSeen", messageId);
+      }
+    }
+  });
+
   // ✅ Typing Indicator
   socket.on("typing", (status) => {
     const user = users[socket.id];
@@ -95,15 +107,6 @@ io.on("connection", (socket) => {
       });
     }
   });
-socket.on("fileUpload", (data) => {
-  const time = new Date().toLocaleTimeString();
-  io.to("localhost").emit("fileMessage", {
-    user: data.name,
-    fileName: data.fileName,
-    fileData: data.fileData,
-    time
-  });
-});
 
   // ✅ (Future) Emoji Reaction
   socket.on("addReaction", ({ messageId, emoji }) => {
