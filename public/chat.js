@@ -15,13 +15,11 @@ const fileInput = document.getElementById("fileInput");
 const uploadProgress = document.getElementById("uploadProgress");
 const pinnedContainer = document.getElementById("pinned-messages");
 
-// ✅ Join room
 if (name && room) {
   socket.emit("joinRoom", { name, room });
   roomNameElem.innerText = `${room} Room`;
 }
 
-// ✅ Send message
 form.addEventListener("submit", function (e) {
   e.preventDefault();
   const message = input.value.trim();
@@ -33,7 +31,6 @@ form.addEventListener("submit", function (e) {
   }
 });
 
-// ✅ Right-click on your message: Edit/Delete/Pin
 messages.addEventListener("contextmenu", (e) => {
   e.preventDefault();
   const li = e.target.closest("li.chat-message.sender");
@@ -75,7 +72,6 @@ messages.addEventListener("contextmenu", (e) => {
   };
 });
 
-// ✅ Seen/Unseen logic with IntersectionObserver
 const observer = new IntersectionObserver(
   (entries) => {
     entries.forEach((entry) => {
@@ -93,7 +89,6 @@ const observer = new IntersectionObserver(
   { threshold: 1.0 }
 );
 
-// ✅ Receive message
 socket.on("message", (message) => {
   const li = document.createElement("li");
   li.classList.add("chat-message");
@@ -106,10 +101,10 @@ socket.on("message", (message) => {
     li.innerText = message.text;
   } else if (message.user === name) {
     li.classList.add("sender");
-    li.innerHTML = `<span class="timestamp">${message.time}</span> <strong>You</strong>: <span class="msg-text">${message.text}</span><span class="seen-check" id="seen-${message.id}"> ✔</span>`;
+    li.innerHTML = `<strong>You:</strong> ${message.text} <span class="seen-check" id="seen-${message.id}">✔</span>`;
   } else {
     li.classList.add("receiver");
-    li.innerHTML = `<span class="timestamp">${message.time}</span> <strong>${message.user}</strong>: <span class="msg-text">${message.text}</span>`;
+    li.innerHTML = `<strong>${message.user}:</strong> ${message.text}`;
     observer.observe(li);
   }
 
@@ -117,27 +112,26 @@ socket.on("message", (message) => {
   messages.scrollTop = messages.scrollHeight;
 });
 
-// ✅ Message seen
 socket.on("messageSeen", (messageId) => {
   const span = document.getElementById(`seen-${messageId}`);
   if (span) {
-    span.textContent = " ✔✔";
+    span.textContent = "✔✔";
     span.style.color = "blue";
   }
 });
 
-// ✅ Message edited
 socket.on("messageEdited", ({ messageId, newText }) => {
   const msgElem = document.getElementById(messageId);
   if (msgElem) {
     const textSpan = msgElem.querySelector(".msg-text");
     if (textSpan) {
       textSpan.textContent = newText + " (edited)";
+    } else {
+      msgElem.innerHTML = msgElem.innerHTML.replace(/>.*</, `> ${newText} (edited) <`);
     }
   }
 });
 
-// ✅ Message deleted
 socket.on("messageDeleted", (messageId) => {
   const msgElem = document.getElementById(messageId);
   if (msgElem) {
@@ -145,7 +139,6 @@ socket.on("messageDeleted", (messageId) => {
   }
 });
 
-// ✅ Message pinned
 socket.on("messagePinned", (msg) => {
   const originalMsg = document.getElementById(msg.id);
   if (originalMsg && !originalMsg.classList.contains("pinned-highlight")) {
@@ -157,7 +150,6 @@ socket.on("messagePinned", (msg) => {
   }
 });
 
-// ✅ Typing status
 let typingTimeout;
 input.addEventListener("input", () => {
   socket.emit("typing", true);
@@ -170,12 +162,10 @@ socket.on("typing", (text) => {
   typing.innerText = text || "";
 });
 
-// ✅ Clear chat
 clearButton.addEventListener("click", () => {
   messages.innerHTML = "";
 });
 
-// ✅ Update user list
 socket.on("roomUsers", ({ users }) => {
   userList.innerHTML = "";
   users.forEach((user) => {
@@ -185,7 +175,6 @@ socket.on("roomUsers", ({ users }) => {
   });
 });
 
-// ✅ File upload handler
 fileInput?.addEventListener("change", () => {
   const file = fileInput.files[0];
   if (!file) return;
@@ -220,7 +209,6 @@ fileInput?.addEventListener("change", () => {
   reader.readAsDataURL(file);
 });
 
-// ✅ Receive file
 socket.on("fileShared", ({ user, fileName, fileData, fileType, time }) => {
   const li = document.createElement("li");
   li.classList.add("chat-message", user === name ? "sender" : "receiver");
@@ -249,12 +237,12 @@ socket.on("fileShared", ({ user, fileName, fileData, fileType, time }) => {
     content = `<a href="${downloadUrl}" download="${fileName}" class="file-link">${icon} ${fileName}</a>`;
   }
 
-  li.innerHTML = `<span class="timestamp">${time}</span> <strong>${user === name ? "You" : user}</strong>: ${content}`;
+  li.innerHTML = `<strong>${user === name ? "You" : user}:</strong> ${content}`;
   messages.appendChild(li);
   messages.scrollTop = messages.scrollHeight;
 });
 
-// ✅ Emoji Logic
+// Emoji logic
 const emojiBtn = document.getElementById("emoji-btn");
 const emojiPanel = document.getElementById("emoji-panel");
 const emojiInput = document.getElementById("msg");
