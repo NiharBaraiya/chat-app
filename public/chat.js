@@ -39,6 +39,7 @@ messages.addEventListener("contextmenu", (e) => {
   if (!li) return;
 
   const messageId = li.dataset.id;
+  const currentText = li.innerText.split(':').slice(1).join(':').trim();
   if (!messageId) return;
 
   const menu = document.createElement("div");
@@ -56,8 +57,8 @@ messages.addEventListener("contextmenu", (e) => {
   document.addEventListener("click", removeMenu, { once: true });
 
   menu.querySelector(".edit-btn").onclick = () => {
-    const newText = prompt("Edit your message:", li.dataset.text || "");
-    if (newText && newText !== li.dataset.text) {
+    const newText = prompt("Edit your message:", currentText);
+    if (newText && newText !== currentText) {
       socket.emit("editMessage", { messageId, newText });
     }
   };
@@ -77,18 +78,19 @@ messages.addEventListener("contextmenu", (e) => {
 socket.on("message", (message) => {
   const li = document.createElement("li");
   li.classList.add("chat-message");
-  li.dataset.id = message.id; // 🔥 IMPORTANT for edit/delete
+  li.dataset.id = message.id;
   li.dataset.text = message.text;
+  li.id = message.id;
 
   if (message.user === "System") {
     li.classList.add("system-msg");
     li.innerText = message.text;
   } else if (message.user === name) {
     li.classList.add("sender");
-    li.innerHTML = `<span class="timestamp">${message.time}</span> <strong>You</strong>: ${message.text}`;
+    li.innerHTML = `<span class="timestamp">${message.time}</span> <strong>You</strong>: <span class="msg-text">${message.text}</span>`;
   } else {
     li.classList.add("receiver");
-    li.innerHTML = `<span class="timestamp">${message.time}</span> <strong>${message.user}</strong>: ${message.text}`;
+    li.innerHTML = `<span class="timestamp">${message.time}</span> <strong>${message.user}</strong>: <span class="msg-text">${message.text}</span>`;
   }
 
   messages.appendChild(li);
@@ -97,41 +99,30 @@ socket.on("message", (message) => {
 
 // ✅ Message edited
 socket.on("messageEdited", ({ messageId, newText }) => {
-  const li = document.querySelector(`li.chat-message[data-id="${messageId}"]`);
-  if (li) {
-    li.dataset.text = newText;
-    const parts = li.innerHTML.split(":</strong>");
-    if (parts.length === 2) {
-      li.innerHTML = `${parts[0]}:</strong> ${newText}`;
+  const msgElem = document.getElementById(messageId);
+  if (msgElem) {
+    const textSpan = msgElem.querySelector(".msg-text");
+    if (textSpan) {
+      textSpan.textContent = newText + " (edited)";
     }
   }
 });
 
 // ✅ Message deleted
 socket.on("messageDeleted", (messageId) => {
-  const li = document.querySelector(`li.chat-message[data-id="${messageId}"]`);
-  if (li) li.remove();
+  const msgElem = document.getElementById(messageId);
+  if (msgElem) {
+    msgElem.remove();
+  }
 });
 
 // ✅ Message pinned
-socket.on("messagePinned", (message) => {
-  const div = document.createElement("div");
-  div.className = "pinned";
-  div.innerHTML = `
-    <strong>📌 ${message.user}:</strong> ${message.text}
-    <span class="timestamp">${message.time}</span>
-  `;
-  pinnedContainer.innerHTML = "";
-  pinnedContainer.appendChild(div);
-
-  const li = document.querySelector(`li.chat-message[data-id="${message.id}"]`);
-  if (li && !li.querySelector(".pin-indicator")) {
-    const pin = document.createElement("span");
-    pin.textContent = "📌";
-    pin.className = "pin-indicator";
-    pin.style.float = "right";
-    pin.style.marginLeft = "10px";
-    li.appendChild(pin);
+socket.on("messagePinned", (msg) => {
+  const pinnedArea = document.getElementById("pinned-message");
+  if (pinnedArea) {
+    pinnedArea.innerHTML = `
+      📌 <strong>${msg.user}</strong>: ${msg.text} <span style="font-size: 0.8em;">(${msg.time})</span>
+    `;
   }
 });
 
