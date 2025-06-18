@@ -40,6 +40,47 @@ h2 {
   flex-direction: column;
   gap: 20px;
 }
+.emoji-wrapper {
+  position: relative;
+}
+
+.emoji-btn {
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 20px;
+}
+
+.emoji-list {
+  display: none;
+  position: absolute;
+  bottom: 45px;
+  left: 0;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  padding: 8px;
+  box-shadow: 0 0 8px rgba(0,0,0,0.2);
+  max-height: 150px;
+  overflow-y: auto;
+  width: 250px;
+  z-index: 10;
+}
+
+.emoji-list span {
+  font-size: 20px;
+  margin: 5px;
+  cursor: pointer;
+  display: inline-block;
+  transition: transform 0.2s;
+}
+
+.emoji-list span:hover {
+  transform: scale(1.2);
+}
 
 /* ==== MESSAGES ==== */
 #messages {
