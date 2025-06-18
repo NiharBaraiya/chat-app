@@ -114,8 +114,10 @@ socket.on("messageDeleted", (messageId) => {
 });
 
 // ✅ Message pinned
+// (Your full code remains unchanged — this is just the additional part inside the socket.on("messagePinned") block)
+
 socket.on("messagePinned", (message) => {
-  // ✅ Show in pinned area
+  // ✅ Show pinned message in top pinned section
   const div = document.createElement("div");
   div.className = "pinned";
   div.innerHTML = `
@@ -125,14 +127,18 @@ socket.on("messagePinned", (message) => {
   pinnedContainer.innerHTML = "";
   pinnedContainer.appendChild(div);
 
-  // ✅ Also add 📌 icon beside the original message
+  // ✅ Add 📌 icon visually to the pinned message in the chat
   const li = document.querySelector(`li.chat-message[data-id="${message.id}"]`);
   if (li && !li.querySelector(".pin-indicator")) {
     const pin = document.createElement("span");
     pin.textContent = "📌";
     pin.className = "pin-indicator";
-    pin.style.float = "right";
-    pin.style.marginLeft = "10px";
+    pin.style.position = "absolute";
+    pin.style.top = "8px";
+    pin.style.right = "12px";
+    pin.style.fontSize = "16px";
+    pin.style.color = "#ff9900";
+    li.style.position = "relative"; // ensure parent li is positioned
     li.appendChild(pin);
   }
 });
