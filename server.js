@@ -7,10 +7,8 @@ const io = new Server(http);
 const crypto = require("crypto"); // ✅ Needed for message IDs
 const PORT = process.env.PORT || 3000;
 
-// ✅ Serve static files from /public but DON'T auto-serve index.html
 app.use(express.static(path.join(__dirname, "public"), { index: false }));
 
-// ✅ Serve index.html on localhost, simple.html otherwise
 app.get("/", (req, res) => {
   const host = req.headers.host;
   if (host.includes("localhost")) {
@@ -20,7 +18,6 @@ app.get("/", (req, res) => {
   }
 });
 
-// Optional fallback routes
 app.get("/simple", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "simple.html"));
 });
@@ -30,47 +27,46 @@ app.get("/index", (req, res) => {
 });
 
 // ========== ✅ Socket.io logic ==========
-const users = {};         // socket.id → user info
-const roomUsers = {};     // room → Set of usernames
+const users = {};               // socket.id → user info
+const roomUsers = {};           // room → Set of usernames
+const roomMessages = {};        // room → Array of { id, user, text, time }
 
 io.on("connection", (socket) => {
-  // ✅ Handle joinRoom
+  // ✅ Join Room
   socket.on("joinRoom", ({ name, room }) => {
     const currentUser = { name, room };
     users[socket.id] = currentUser;
     socket.join(room);
 
-    if (!roomUsers[room]) {
-      roomUsers[room] = new Set();
-    }
+    if (!roomUsers[room]) roomUsers[room] = new Set();
+    if (!roomMessages[room]) roomMessages[room] = [];
 
-    const existing = [...roomUsers[room]];
-    if (existing.length > 0) {
-      socket.emit("message", formatMessage("System", `${existing.join(", ")} already joined this chat.`));
+    const existingUsers = [...roomUsers[room]];
+    if (existingUsers.length > 0) {
+      socket.emit("message", formatMessage("System", `${existingUsers.join(", ")} already joined this chat.`));
     }
 
     roomUsers[room].add(name);
-
     socket.emit("message", formatMessage("System", `Welcome ${name}!`));
-
     socket.broadcast.to(room).emit("message", formatMessage("System", `${name} joined the chat.`));
 
     io.to(room).emit("roomUsers", {
       room,
-      users: [...roomUsers[room]].map(name => ({ name })),
+      users: [...roomUsers[room]].map(name => ({ name }))
     });
   });
 
-  // ✅ Handle chat message
+  // ✅ Chat Message
   socket.on("chatMessage", (text) => {
     const user = users[socket.id];
     if (user) {
       const message = formatMessage(user.name, text);
+      roomMessages[user.room].push(message); // ✅ Store for edit/delete
       io.to(user.room).emit("message", message);
     }
   });
 
-  // ✅ Handle typing
+  // ✅ Typing
   socket.on("typing", (status) => {
     const user = users[socket.id];
     if (user) {
@@ -79,7 +75,7 @@ io.on("connection", (socket) => {
     }
   });
 
-  // ✅ Handle file upload
+  // ✅ File Upload
   socket.on("fileUpload", ({ fileName, fileData, fileType }) => {
     const user = users[socket.id];
     if (user) {
@@ -94,7 +90,7 @@ io.on("connection", (socket) => {
     }
   });
 
-  // ✅ Handle emoji reaction
+  // ✅ Add Emoji Reaction
   socket.on("addReaction", ({ messageId, emoji }) => {
     const user = users[socket.id];
     if (user) {
@@ -102,7 +98,31 @@ io.on("connection", (socket) => {
     }
   });
 
-  // ✅ Handle disconnect
+  // ✅ Edit Message
+  socket.on("editMessage", ({ messageId, newText }) => {
+    const user = users[socket.id];
+    if (!user || !roomMessages[user.room]) return;
+
+    const message = roomMessages[user.room].find(msg => msg.id === messageId && msg.user === user.name);
+    if (message) {
+      message.text = newText;
+      io.to(user.room).emit("messageEdited", { messageId, newText });
+    }
+  });
+
+  // ✅ Delete Message
+  socket.on("deleteMessage", (messageId) => {
+    const user = users[socket.id];
+    if (!user || !roomMessages[user.room]) return;
+
+    const index = roomMessages[user.room].findIndex(msg => msg.id === messageId && msg.user === user.name);
+    if (index !== -1) {
+      roomMessages[user.room].splice(index, 1);
+      io.to(user.room).emit("messageDeleted", messageId);
+    }
+  });
+
+  // ✅ Disconnect
   socket.on("disconnect", () => {
     const user = users[socket.id];
     if (user) {
@@ -114,10 +134,11 @@ io.on("connection", (socket) => {
         if (roomUsers[user.room].size > 0) {
           io.to(user.room).emit("roomUsers", {
             room: user.room,
-            users: [...roomUsers[user.room]].map(name => ({ name })),
+            users: [...roomUsers[user.room]].map(name => ({ name }))
           });
         } else {
           delete roomUsers[user.room];
+          delete roomMessages[user.room];
         }
       }
 
@@ -126,10 +147,10 @@ io.on("connection", (socket) => {
   });
 });
 
-// ✅ Format message with unique ID and timestamp
+// ✅ Format Message with unique ID and timestamp
 function formatMessage(user, text) {
   return {
-    id: crypto.randomUUID(),  // 🔥 Unique message ID
+    id: crypto.randomUUID(),
     user,
     text,
     time: getCurrentTime()
