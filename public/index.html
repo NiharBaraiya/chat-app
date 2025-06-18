@@ -5,63 +5,246 @@
   <title>Simple Chat (Localhost)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="style.css" />
+  <style>
+    .context-menu {
+      position: absolute;
+      background: #fff;
+      border: 1px solid #ccc;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+      padding: 5px;
+      z-index: 9999;
+      display: none;
+    }
+    .context-menu button {
+      display: block;
+      background: none;
+      border: none;
+      width: 100%;
+      text-align: left;
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+    .context-menu button:hover {
+      background: #eee;
+    }
+    #pinned-message {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #fdf3c9;
+      padding: 10px 15px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      max-width: 300px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      font-size: 14px;
+      z-index: 1000;
+    }
+    .emoji-panel span {
+      font-size: 20px;
+      margin: 5px;
+      cursor: pointer;
+    }
+    img.uploaded-img {
+      max-width: 200px;
+      margin-top: 5px;
+      border-radius: 5px;
+    }
+  </style>
 </head>
 <body>
-  <h2>💬 Real Time Chat Application</h2>
-  <ul id="messages"></ul>
-  <p id="typing"></p>
+  <div class="main-container" style="width:1280px;">
+    <div class="chat-container">
+      <h2>💬 Real Time Chat Application</h2>
+      <ul id="messages"></ul>
+      <p id="typing"></p>
 
-  <form id="chatForm">
-    <input id="msg" type="text" placeholder="Type a message..." autocomplete="off" required />
-    <button>Send</button>
-  </form>
+      <form id="chatForm" class="chat-container">
+        <div class="input-bar">
+          <div class="input-group">
+            <button type="button" id="toggleEmoji" title="Emoji">😀</button>
+            <input id="msg" type="text" placeholder="Type a message..." autocomplete="off" required />
+            <label class="file-upload" title="Upload File">
+              📁
+              <input type="file" id="fileInput" hidden />
+            </label>
+          </div>
+          <button type="submit" title="Send">📤</button>
+          <button type="button" id="clearChat" title="Clear Chat">🧹 Clear</button>
+        </div>
+        <div id="emojiPanel" class="emoji-panel"></div>
+      </form>
+    </div>
+  </div>
+
+  <div class="context-menu" id="contextMenu">
+    <button id="editBtn">✏️ Edit</button>
+    <button id="deleteBtn">🗑️ Delete</button>
+    <button id="pinBtn">📌 Pin</button>
+  </div>
+
+  <div id="pinned-message" style="display: none;"></div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
     const name = prompt("Enter your name:")?.trim() || "Anonymous";
-
     const form = document.getElementById("chatForm");
     const input = document.getElementById("msg");
     const messages = document.getElementById("messages");
     const typing = document.getElementById("typing");
+    const clearButton = document.getElementById("clearChat");
+    const fileInput = document.getElementById("fileInput");
+    const emojiBtn = document.getElementById("toggleEmoji");
+    const emojiPanel = document.getElementById("emojiPanel");
+    const pinnedMessage = document.getElementById("pinned-message");
+    const contextMenu = document.getElementById("contextMenu");
 
-    // Send just the message string
+    let selectedMessage = null;
+
+    const emojiList = ["😀","😃","😄","😁","😆","😅","😂"];
+    emojiList.forEach(e => {
+      const span = document.createElement("span");
+      span.textContent = e;
+      span.onclick = () => {
+        input.value += e;
+        input.focus();
+      };
+      emojiPanel.appendChild(span);
+    });
+
+    emojiBtn.onclick = () => {
+      emojiPanel.style.display = emojiPanel.style.display === "block" ? "none" : "block";
+    };
+
+    document.addEventListener("click", (e) => {
+      if (!emojiPanel.contains(e.target) && e.target !== emojiBtn) {
+        emojiPanel.style.display = "none";
+      }
+      if (!contextMenu.contains(e.target)) {
+        contextMenu.style.display = "none";
+        selectedMessage = null;
+      }
+    });
+
     form.addEventListener("submit", function (e) {
       e.preventDefault();
       const msg = input.value.trim();
       if (msg) {
-        socket.emit("chatMessage", msg); // ✅ Fixed
+        socket.emit("chatMessage", msg);
         input.value = "";
         input.focus();
       }
     });
 
-    // Display incoming messages
     socket.on("message", (message) => {
       const li = document.createElement("li");
-      li.innerHTML = `<span class="timestamp">[${message.time}]</span> <span class="user">${message.user}</span>: ${message.text}`;
+      li.classList.add("chat-message", message.user === name ? "sender" : "receiver");
+      li.innerHTML = `<div class="msg-header"><span class="user">${message.user}</span>: <span class="text">${message.text}</span></div>
+                      <div class="timestamp">${message.time}</div>`;
+      li.dataset.user = message.user;
+      li.dataset.text = message.text;
+
+      if (message.user === name) {
+        li.addEventListener("contextmenu", (e) => {
+          e.preventDefault();
+          selectedMessage = li;
+          showContextMenu(e.pageX, e.pageY);
+        });
+      }
+
       messages.appendChild(li);
       messages.scrollTop = messages.scrollHeight;
     });
 
-    // Typing indicator
+   socket.on("fileMessage", (message) => {
+  const li = document.createElement("li");
+  li.classList.add("chat-message", message.user === name ? "sender" : "receiver");
+
+  const isImage = message.fileName.match(/\.(jpeg|jpg|gif|png|webp)$/i);
+
+  let content = `<div class="msg-header"><span class="user">${message.user}</span>: <br>`;
+
+  if (isImage) {
+    content += `<img src="${message.fileData}" class="uploaded-img" alt="${message.fileName}" /><br>`;
+  }
+
+  // Always add the download link
+  content += `<a href="${message.fileData}" download="${message.fileName}" target="_blank" class="download-link">⬇️  ${message.fileName}</a>`;
+  content += `</div><div class="timestamp">${message.time}</div>`;
+
+  li.innerHTML = content;
+  messages.appendChild(li);
+  messages.scrollTop = messages.scrollHeight;
+});
+
+    fileInput.addEventListener("change", () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        socket.emit("fileUpload", {
+          name,
+          fileName: file.name,
+          fileData: e.target.result
+        });
+      };
+      reader.readAsDataURL(file);
+    });
+
+    function showContextMenu(x, y) {
+      contextMenu.style.left = `${x}px`;
+      contextMenu.style.top = `${y}px`;
+      contextMenu.style.display = "block";
+    }
+
+    document.getElementById("editBtn").onclick = () => {
+      if (selectedMessage) {
+        const currentText = selectedMessage.querySelector(".text").innerText;
+        const newText = prompt("Edit your message:", currentText);
+        if (newText !== null) {
+          selectedMessage.querySelector(".text").innerText = newText;
+          selectedMessage.dataset.text = newText;
+        }
+        contextMenu.style.display = "none";
+      }
+    };
+
+    document.getElementById("deleteBtn").onclick = () => {
+      if (selectedMessage) {
+        selectedMessage.remove();
+        contextMenu.style.display = "none";
+      }
+    };
+
+    document.getElementById("pinBtn").onclick = () => {
+      if (selectedMessage) {
+        const pinnedText = selectedMessage.querySelector(".msg-header").innerText;
+        pinnedMessage.innerHTML = `📌 <strong>Pinned:</strong> ${pinnedText}`;
+        pinnedMessage.style.display = "block";
+        contextMenu.style.display = "none";
+      }
+    };
+
     let typingTimeout;
     input.addEventListener("input", () => {
       socket.emit("typing", true);
       clearTimeout(typingTimeout);
       typingTimeout = setTimeout(() => {
         socket.emit("typing", false);
-      }, 1000);
+      }, 3000);
     });
 
     socket.on("typing", (text) => {
       typing.innerText = text || "";
     });
 
-    // Send name to server when connected
-    socket.emit("joinRoom", { name, room: null });
+    clearButton.addEventListener("click", () => {
+      messages.innerHTML = "";
+    });
+
+    socket.emit("joinRoom", { name, room: "localhost" });
   </script>
 </body>
 </html>
-
