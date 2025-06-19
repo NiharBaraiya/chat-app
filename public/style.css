@@ -81,6 +81,10 @@ h2 {
   overflow-y: auto;
   max-height: 500px;
 }
+.search-highlight {
+  background-color: yellow !important;
+  transition: background-color 0.5s ease-in-out;
+}
 
 /* Chat message base */
 .chat-message {
