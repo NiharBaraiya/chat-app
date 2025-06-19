@@ -23,7 +23,8 @@ if (name && room) {
 form.addEventListener("submit", (e) => {
   e.preventDefault();
   if (input.value.trim()) {
-    socket.emit("chatMessage", input.value);
+    const messageId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    socket.emit("chatMessage", { text: input.value, id: messageId });
     input.value = "";
     input.focus();
   }
@@ -99,22 +100,24 @@ socket.on("message", (message) => {
     li.innerText = message.text;
   } else if (message.user === name) {
     li.classList.add("sender");
-    li.innerHTML = `<strong>You:</strong> ${message.text} <span class="seen-check" id="seen-${message.id}">✔</span>`;
+    li.innerHTML = `<strong>You:</strong> ${message.text} <span class="seen-check" id="seen-${message.id}" data-status="sent">✔</span>`;
   } else {
     li.classList.add("receiver");
     li.innerHTML = `<strong>${message.user}:</strong> ${message.text}`;
+    observer.observe(li);
   }
 
   messages.appendChild(li);
   messages.scrollTop = messages.scrollHeight;
 });
 
-
 socket.on("messageSeen", (messageId) => {
   const span = document.getElementById(`seen-${messageId}`);
   if (span) {
     span.textContent = "✔✔";
+    span.setAttribute("data-status", "seen");
     span.style.color = "blue";
+    span.title = "Seen";
   }
 });
 
@@ -240,7 +243,6 @@ socket.on("fileShared", ({ user, fileName, fileData, fileType, time }) => {
   messages.scrollTop = messages.scrollHeight;
 });
 
-// Emoji logic
 const emojiBtn = document.getElementById("emoji-btn");
 const emojiPanel = document.getElementById("emoji-panel");
 const emojiInput = document.getElementById("msg");
