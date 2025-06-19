@@ -14,6 +14,15 @@ const clearButton = document.getElementById("clearChat");
 const fileInput = document.getElementById("fileInput");
 const uploadProgress = document.getElementById("uploadProgress");
 const pinnedContainer = document.getElementById("pinned-messages");
+const searchInput = document.getElementById("searchInput");
+const searchButton = document.getElementById("searchButton");
+const recordAudioBtn = document.getElementById("record-audio");
+const capturePhotoBtn = document.getElementById("capture-photo");
+const webcam = document.getElementById("webcam");
+const canvas = document.getElementById("snapshot");
+
+let mediaRecorder;
+let audioChunks = [];
 
 if (name && room) {
   socket.emit("joinRoom", { name, room });
@@ -92,7 +101,7 @@ socket.on("message", (message) => {
   const li = document.createElement("li");
   li.classList.add("chat-message");
   li.dataset.id = message.id;
-  li.dataset.text = message.text;
+  li.dataset.text = message.text.toLowerCase();
   li.id = message.id;
 
   if (message.user === "System") {
@@ -106,7 +115,7 @@ socket.on("message", (message) => {
     li.innerHTML = `<strong>${message.user}:</strong> ${message.text}`;
     observer.observe(li);
   }
-li.dataset.text = message.text.toLowerCase();  // Make search easier
+
   messages.appendChild(li);
   messages.scrollTop = messages.scrollHeight;
 });
@@ -124,20 +133,13 @@ socket.on("messageSeen", (messageId) => {
 socket.on("messageEdited", ({ messageId, newText }) => {
   const msgElem = document.getElementById(messageId);
   if (msgElem) {
-    const textSpan = msgElem.querySelector(".msg-text");
-    if (textSpan) {
-      textSpan.textContent = newText + " (edited)";
-    } else {
-      msgElem.innerHTML = msgElem.innerHTML.replace(/>.*</, `> ${newText} (edited) <`);
-    }
+    msgElem.innerHTML = msgElem.innerHTML.replace(/>.*</, `> ${newText} (edited) <`);
   }
 });
 
 socket.on("messageDeleted", (messageId) => {
   const msgElem = document.getElementById(messageId);
-  if (msgElem) {
-    msgElem.remove();
-  }
+  if (msgElem) msgElem.remove();
 });
 
 socket.on("messagePinned", (msg) => {
@@ -159,6 +161,7 @@ input.addEventListener("input", () => {
     socket.emit("typing", false);
   }, 1000);
 });
+
 socket.on("typing", (text) => {
   typing.innerText = text || "";
 });
@@ -214,10 +217,7 @@ socket.on("fileShared", ({ user, fileName, fileData, fileType, time }) => {
   const li = document.createElement("li");
   li.classList.add("chat-message", user === name ? "sender" : "receiver");
 
-  const blob = new Blob(
-    [Uint8Array.from(atob(fileData.split(',')[1]), c => c.charCodeAt(0))],
-    { type: fileType }
-  );
+  const blob = new Blob([Uint8Array.from(atob(fileData.split(',')[1]), c => c.charCodeAt(0))], { type: fileType });
   const downloadUrl = URL.createObjectURL(blob);
 
   const fileExt = fileName.split('.').pop().toLowerCase();
@@ -229,53 +229,17 @@ socket.on("fileShared", ({ user, fileName, fileData, fileType, time }) => {
   const icon = fileIcons[fileExt] || fileIcons.default;
 
   let content;
- if (fileType.startsWith("image/")) {
-    content = `
-      <a href="${downloadUrl}" download="${fileName}" target="_blank">
-        <img src="${downloadUrl}" alt="${fileName}" class="shared-img" />
-      </a>`;
+  if (fileType.startsWith("image/")) {
+    content = `<a href="${downloadUrl}" download="${fileName}" target="_blank">
+      <img src="${downloadUrl}" alt="${fileName}" class="shared-img" /></a>`;
   } else {
-    content = <a href="${downloadUrl}" download="${fileName}" class="file-link">${icon} ${fileName}</a>;
-  }
+    content = `<a href="${downloadUrl}" download="${fileName}" class="file-link">${icon} ${fileName}</a>`;
+  }
 
   li.innerHTML = `<strong>${user === name ? "You" : user}:</strong> ${content}`;
   messages.appendChild(li);
   messages.scrollTop = messages.scrollHeight;
 });
-
-const emojiBtn = document.getElementById("emoji-btn");
-const emojiPanel = document.getElementById("emoji-panel");
-const emojiInput = document.getElementById("msg");
-const emojiList = [
-  "😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃","😉","😌","😍","😘","😗",
-  "😙","😚","😋","😛","😜","🤪","😝","🤑","🤗","🤭","🤫","🤔","🤐","🤨","😐","😑","😶",
-  "😏","😒","🙄","😬","🤥","😌","😔","😪","🤤","😴","😷","🤒","🤕","🤢","🤮","🤧","🥵",
-  "🥶","🥴","😵","🤯","🤠","🥳","😎","🤓","🧐","😕","😟","🙁","☹️","😮","😯","😲","😳",
-  "🥺","😦","😧","😨","😰","😥","😢","😭","😱","😖","😣","😞","😓","😩","😫","🥱","😤",
-  "😡","😠","🤬","😈","👿"
-];
-emojiList.forEach(emoji => {
-  const btn = document.createElement("button");
-  btn.textContent = emoji;
-  btn.type = "button";
-  btn.className = "emoji-btn";
-  btn.addEventListener("click", () => {
-    emojiInput.value += emoji;
-    emojiInput.focus();
-    emojiPanel.style.display = "none";
-  });
-  emojiPanel.appendChild(btn);
-});
-emojiBtn.addEventListener("click", () => {
-  emojiPanel.style.display = emojiPanel.style.display === "none" ? "block" : "none";
-});
-document.addEventListener("click", (e) => {
-  if (!emojiPanel.contains(e.target) && e.target !== emojiBtn) {
-    emojiPanel.style.display = "none";
-  }
-});
-const searchInput = document.getElementById("searchInput");
-const searchButton = document.getElementById("searchButton");
 
 searchButton.addEventListener("click", () => {
   const keyword = searchInput.value.trim().toLowerCase();
@@ -286,36 +250,20 @@ searchButton.addEventListener("click", () => {
 
   allMessages.forEach(msg => {
     msg.classList.remove("search-highlight");
-    const rawText = msg.dataset.text?.toLowerCase() || msg.textContent.toLowerCase();
+    const rawText = msg.dataset.text || msg.textContent.toLowerCase();
     if (!found && rawText.includes(keyword)) {
       msg.scrollIntoView({ behavior: "smooth", block: "center" });
       msg.classList.add("search-highlight");
       found = true;
-
-      // Automatically remove highlight after 5 seconds
       setTimeout(() => msg.classList.remove("search-highlight"), 5000);
     }
   });
 
-  if (!found) {
-    alert(`❌ No message found containing: "${keyword}"`);
-  }
+  if (!found) alert(`❌ No message found containing: "${keyword}"`);
 });
-const recordAudioBtn = document.getElementById("record-audio");
-const capturePhotoBtn = document.getElementById("capture-photo");
-const webcam = document.getElementById("webcam");
-const canvas = document.getElementById("snapshot");
 
-let mediaRecorder;
-let audioChunks = [];
-
-// 🎤 AUDIO RECORDING
 recordAudioBtn.addEventListener("click", async () => {
-  if (!navigator.mediaDevices) {
-    alert("Audio not supported on your device.");
-    return;
-  }
-
+  if (!navigator.mediaDevices) return alert("Audio not supported on your device.");
   const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
   mediaRecorder = new MediaRecorder(stream);
@@ -340,16 +288,11 @@ recordAudioBtn.addEventListener("click", async () => {
 
   setTimeout(() => {
     if (mediaRecorder.state === "recording") mediaRecorder.stop();
-  }, 10000); // 10s limit
+  }, 10000);
 });
 
-// 📷 WEBCAM CAPTURE
 capturePhotoBtn.addEventListener("click", async () => {
-  if (!navigator.mediaDevices) {
-    alert("Camera not supported.");
-    return;
-  }
-
+  if (!navigator.mediaDevices) return alert("Camera not supported.");
   const stream = await navigator.mediaDevices.getUserMedia({ video: true });
   webcam.srcObject = stream;
   webcam.style.display = "block";
@@ -359,7 +302,6 @@ capturePhotoBtn.addEventListener("click", async () => {
     canvas.width = webcam.videoWidth;
     canvas.height = webcam.videoHeight;
     ctx.drawImage(webcam, 0, 0);
-
     stream.getTracks().forEach(track => track.stop());
     webcam.style.display = "none";
 
@@ -369,6 +311,5 @@ capturePhotoBtn.addEventListener("click", async () => {
       fileData: imgData,
       fileType: "image/png",
     });
-  }, 3000); // Auto capture after 3 seconds
+  }, 3000);
 });
-
