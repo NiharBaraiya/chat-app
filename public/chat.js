@@ -229,7 +229,9 @@ socket.on("fileShared", ({ user, fileName, fileData, fileType, time }) => {
   const icon = fileIcons[fileExt] || fileIcons.default;
 
   let content;
-  if (fileType.startsWith("image/")) {
+  if (fileType.startsWith("audio/")) {
+    content = `<audio controls><source src="${downloadUrl}" type="${fileType}"></audio>`;
+  } else if (fileType.startsWith("image/")) {
     content = `<a href="${downloadUrl}" download="${fileName}" target="_blank">
       <img src="${downloadUrl}" alt="${fileName}" class="shared-img" /></a>`;
   } else {
