@@ -37,10 +37,11 @@
           </div>
 
          <!-- Emoji Button and Panel -->
- <div class="emoji-container">
-            <button type="button" id="emoji-btn" title="Insert Emoji">😄</button>
-            <div id="emoji-panel" class="emoji-panel" style="display: none;"></div>
-          </div>
+ <div style="position: relative;">
+  <button id="emoji-btn" type="button">😊</button>
+  <div id="emoji-panel" style="display: none; position: absolute; background: #fff; border: 1px solid #ccc; max-height: 150px; overflow-y: auto; z-index: 1000;"></div>
+</div>
+
 
 
           <!-- ✅ File Upload -->
