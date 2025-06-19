@@ -106,7 +106,7 @@ socket.on("message", (message) => {
     li.innerHTML = `<strong>${message.user}:</strong> ${message.text}`;
     observer.observe(li);
   }
-
+li.dataset.text = message.text.toLowerCase();  // Make search easier
   messages.appendChild(li);
   messages.scrollTop = messages.scrollHeight;
 });
@@ -284,21 +284,21 @@ searchButton.addEventListener("click", () => {
   const allMessages = document.querySelectorAll("#messages .chat-message");
   let found = false;
 
-  allMessages.forEach(msg => msg.classList.remove("search-highlight"));
-
-  for (const msg of allMessages) {
-    const msgText = msg.dataset.text?.toLowerCase() || msg.textContent.toLowerCase();
-    if (msgText.includes(keyword)) {
+  allMessages.forEach(msg => {
+    msg.classList.remove("search-highlight");
+    const rawText = msg.dataset.text?.toLowerCase() || msg.textContent.toLowerCase();
+    if (!found && rawText.includes(keyword)) {
       msg.scrollIntoView({ behavior: "smooth", block: "center" });
       msg.classList.add("search-highlight");
       found = true;
+
+      // Automatically remove highlight after 5 seconds
       setTimeout(() => msg.classList.remove("search-highlight"), 5000);
-      break;
     }
-  }
+  });
 
   if (!found) {
-    alert(`No message found matching: "${keyword}"`);
+    alert(`❌ No message found containing: "${keyword}"`);
   }
 });
 
