@@ -54,19 +54,19 @@ io.on("connection", (socket) => {
     });
   });
 
-  socket.on("chatMessage", (text) => {
-    const user = users[socket.id];
-    if (user) {
-      const message = {
-        id: crypto.randomUUID(),
-        user: user.name,
-        text: typeof text === "string" ? text : JSON.stringify(text),
-        time: getCurrentTime()
-      };
-      messages[message.id] = message;
-      io.to(user.room).emit("message", message);
-    }
-  });
+socket.on("chatMessage", ({ text, id }) => {
+  const user = users[socket.id];
+  if (user) {
+    const message = {
+      id: id || crypto.randomUUID(),
+      user: user.name,
+      text,
+      time: getCurrentTime()
+    };
+    messages[message.id] = message;
+    io.to(user.room).emit("message", message);
+  }
+});
 
   socket.on("seenMessage", (messageId) => {
     const user = users[socket.id];
