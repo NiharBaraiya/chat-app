@@ -274,3 +274,35 @@ document.addEventListener("click", (e) => {
     emojiPanel.style.display = "none";
   }
 });
+const searchInput = document.getElementById("searchInput");
+const searchButton = document.getElementById("searchButton");
+
+searchButton.addEventListener("click", () => {
+  const keyword = searchInput.value.trim().toLowerCase();
+  if (!keyword) return;
+
+  const allMessages = document.querySelectorAll("#messages .chat-message");
+  let found = false;
+
+  allMessages.forEach(msg => {
+    msg.classList.remove("search-highlight");
+  });
+
+  for (const msg of allMessages) {
+    const text = msg.dataset.text || msg.textContent;
+    if (text.toLowerCase().includes(keyword)) {
+      msg.scrollIntoView({ behavior: "smooth", block: "center" });
+      msg.classList.add("search-highlight");
+      found = true;
+
+      setTimeout(() => {
+        msg.classList.remove("search-highlight");
+      }, 5000); // remove highlight after 5 sec
+      break;
+    }
+  }
+
+  if (!found) {
+    alert("No matching message found.");
+  }
+});
