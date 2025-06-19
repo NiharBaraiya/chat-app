@@ -1,5 +1,4 @@
-
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -21,11 +20,12 @@
       <h2 id="room-name">Room Chat</h2>
 
       <!-- ✅ Messages -->
-      <ul id="messages"><div style="margin: 10px 0;">
-  <input id="searchInput" type="text" placeholder="🔍 Search messages..." style="padding: 5px; width: 200px;" />
-  <button id="searchButton" type="button">Search</button>
-</div>
-</ul>
+      <ul id="messages">
+        <div style="margin: 10px 0;">
+          <input id="searchInput" type="text" placeholder="🔍 Search messages..." style="padding: 5px; width: 200px;" />
+          <button id="searchButton" type="button">Search</button>
+        </div>
+      </ul>
       <p id="typing"></p>
 
       <!-- ✅ Chat Form -->
@@ -37,15 +37,14 @@
             <input id="msg" type="text" placeholder="Your message..." autocomplete="off" required />
           </div>
 
-<!-- Add this near your input area -->
-<div style="position: relative;">
-  <button id="emoji-btn" type="button">😊</button>
-  <div id="emoji-panel"
-       style="display: none; position: absolute; bottom: 40px; background: #fff; border: 1px solid #ccc; padding: 5px; border-radius: 5px; max-height: 150px; overflow-y: auto; z-index: 999;">
-  </div>
-</div>
-
-
+          <!-- ✅ Emoji Button & Panel -->
+          <div style="position: relative;">
+            <button id="emoji-btn" type="button">😊</button>
+            <div id="emoji-panel"
+              style="display: none; position: absolute; bottom: 40px; background: #fff; border: 1px solid #ccc; padding: 5px; border-radius: 5px; max-height: 150px; overflow-y: auto; z-index: 999; width: 250px;">
+              <!-- Dynamically populated by chat.js -->
+            </div>
+          </div>
 
           <!-- ✅ File Upload -->
           <label class="file-upload" title="Upload File">
@@ -56,10 +55,10 @@
 
           <!-- ✅ Buttons -->
           <button type="submit">Send</button>
-<button type="button" id="record-audio">🎤</button>
+          <button type="button" id="record-audio">🎤</button>
 
-<video id="webcam" autoplay playsinline style="display:none; width:200px;"></video>
-<canvas id="snapshot" style="display:none;"></canvas>
+          <video id="webcam" autoplay playsinline style="display:none; width:200px;"></video>
+          <canvas id="snapshot" style="display:none;"></canvas>
 
           <button type="button" id="clearChat" class="clear-btn">🧹 Clear Chat</button>
         </div>
@@ -67,7 +66,7 @@
     </div>
   </div>
 
-  <!-- ✅ Pinned Messages Container (added) -->
+  <!-- ✅ Pinned Messages Container -->
   <div id="pinned-messages"></div>
 
   <!-- ✅ Edit Modal -->
@@ -78,6 +77,7 @@
     <button id="cancelEditBtn">Cancel</button>
   </div>
 
+  <!-- ✅ Scripts -->
   <script src="/socket.io/socket.io.js"></script>
   <script src="chat.js"></script>
 </body>
