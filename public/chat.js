@@ -1,3 +1,5 @@
+// ✅ Chat.js (Updated with All Features + Working Emoji Support)
+
 const socket = io();
 
 const urlParams = new URLSearchParams(window.location.search);
@@ -20,8 +22,6 @@ const recordAudioBtn = document.getElementById("record-audio");
 const capturePhotoBtn = document.getElementById("capture-photo");
 const webcam = document.getElementById("webcam");
 const canvas = document.getElementById("snapshot");
-const emojiBtn = document.getElementById("emoji-btn");
-const emojiPanel = document.getElementById("emoji-panel");
 
 let mediaRecorder;
 let audioChunks = [];
@@ -82,22 +82,19 @@ messages.addEventListener("contextmenu", (e) => {
   };
 });
 
-const observer = new IntersectionObserver(
-  (entries) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting) {
-        const msgElem = entry.target;
-        const msgId = msgElem.dataset.id;
-        const isReceiver = msgElem.classList.contains("receiver");
-        if (isReceiver && msgId) {
-          socket.emit("seenMessage", msgId);
-          observer.unobserve(msgElem);
-        }
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach((entry) => {
+    if (entry.isIntersecting) {
+      const msgElem = entry.target;
+      const msgId = msgElem.dataset.id;
+      const isReceiver = msgElem.classList.contains("receiver");
+      if (isReceiver && msgId) {
+        socket.emit("seenMessage", msgId);
+        observer.unobserve(msgElem);
       }
-    });
-  },
-  { threshold: 1.0 }
-);
+    }
+  });
+}, { threshold: 1.0 });
 
 socket.on("message", (message) => {
   const li = document.createElement("li");
@@ -184,29 +181,16 @@ socket.on("roomUsers", ({ users }) => {
 fileInput?.addEventListener("change", () => {
   const file = fileInput.files[0];
   if (!file) return;
-
   const maxSize = 5 * 1024 * 1024;
-  if (file.size > maxSize) {
-    alert("❌ File too large. Max 5MB allowed.");
-    return;
-  }
+  if (file.size > maxSize) return alert("❌ File too large. Max 5MB allowed.");
 
   const reader = new FileReader();
-  reader.onloadstart = () => {
-    uploadProgress.style.display = "block";
-    uploadProgress.value = 0;
-  };
-  reader.onprogress = (e) => {
-    if (e.lengthComputable) {
-      const percent = (e.loaded / e.total) * 100;
-      uploadProgress.value = percent;
-    }
-  };
+  reader.onloadstart = () => uploadProgress.style.display = "block";
+  reader.onprogress = (e) => uploadProgress.value = (e.loaded / e.total) * 100;
   reader.onload = () => {
-    const base64 = reader.result;
     socket.emit("fileUpload", {
       fileName: file.name,
-      fileData: base64,
+      fileData: reader.result,
       fileType: file.type,
     });
     uploadProgress.style.display = "none";
@@ -215,42 +199,31 @@ fileInput?.addEventListener("change", () => {
   reader.readAsDataURL(file);
 });
 
-socket.on("fileShared", ({ user, fileName, fileData, fileType, time }) => {
+socket.on("fileShared", ({ user, fileName, fileData, fileType }) => {
   const li = document.createElement("li");
   li.classList.add("chat-message", user === name ? "sender" : "receiver");
 
   const blob = new Blob([Uint8Array.from(atob(fileData.split(',')[1]), c => c.charCodeAt(0))], { type: fileType });
   const downloadUrl = URL.createObjectURL(blob);
 
-  const fileExt = fileName.split('.').pop().toLowerCase();
-  const fileIcons = {
+  const icon = {
     pdf: "📄", doc: "📝", docx: "📝", txt: "📃",
     jpg: "🖼️", jpeg: "🖼️", png: "🖼️", gif: "🖼️",
     zip: "🗜️", mp4: "🎥", mp3: "🎵", default: "📁"
-  };
-  const icon = fileIcons[fileExt] || fileIcons.default;
+  }[fileName.split('.').pop().toLowerCase()] || "📁";
 
-  let content;
-  if (fileType.startsWith("image/")) {
-    content = `<a href="${downloadUrl}" download="${fileName}" target="_blank">
-      <img src="${downloadUrl}" alt="${fileName}" class="shared-img" /></a>`;
-  } else {
-    content = `<a href="${downloadUrl}" download="${fileName}" class="file-link">${icon} ${fileName}</a>`;
-  }
-
-  li.innerHTML = `<strong>${user === name ? "You" : user}:</strong> ${content}`;
+  li.innerHTML = `<strong>${user === name ? "You" : user}:</strong> ` +
+    (fileType.startsWith("image/") ? `<a href="${downloadUrl}" download><img src="${downloadUrl}" class="shared-img" /></a>` : `<a href="${downloadUrl}" download class="file-link">${icon} ${fileName}</a>`);
   messages.appendChild(li);
   messages.scrollTop = messages.scrollHeight;
 });
 
-socket.on("audioMessage", ({ user, fileName, fileData, fileType }) => {
+socket.on("audioMessage", ({ user, fileData }) => {
   const li = document.createElement("li");
   li.classList.add("chat-message", user === name ? "sender" : "receiver");
-
   const audio = document.createElement("audio");
   audio.controls = true;
   audio.src = fileData;
-
   li.innerHTML = `<strong>${user === name ? "You" : user}:</strong> `;
   li.appendChild(audio);
   messages.appendChild(li);
@@ -263,7 +236,6 @@ searchButton.addEventListener("click", () => {
 
   const allMessages = document.querySelectorAll("#messages .chat-message");
   let found = false;
-
   allMessages.forEach(msg => {
     msg.classList.remove("search-highlight");
     const rawText = msg.dataset.text || msg.textContent.toLowerCase();
@@ -274,21 +246,18 @@ searchButton.addEventListener("click", () => {
       setTimeout(() => msg.classList.remove("search-highlight"), 5000);
     }
   });
-
   if (!found) alert(`❌ No message found containing: "${keyword}"`);
 });
 
 recordAudioBtn.addEventListener("click", async () => {
-  if (!navigator.mediaDevices) return alert("Audio not supported on your device.");
+  if (!navigator.mediaDevices) return alert("Audio not supported.");
   const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
   mediaRecorder = new MediaRecorder(stream);
   mediaRecorder.start();
   recordAudioBtn.textContent = "⏹️";
-
   mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
   mediaRecorder.onstop = () => {
-    const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+    const blob = new Blob(audioChunks, { type: "audio/webm" });
     const reader = new FileReader();
     reader.onloadend = () => {
       socket.emit("audioMessage", {
@@ -297,11 +266,10 @@ recordAudioBtn.addEventListener("click", async () => {
         fileType: "audio/webm",
       });
     };
-    reader.readAsDataURL(audioBlob);
+    reader.readAsDataURL(blob);
     audioChunks = [];
     recordAudioBtn.textContent = "🎤";
   };
-
   setTimeout(() => {
     if (mediaRecorder.state === "recording") mediaRecorder.stop();
   }, 10000);
@@ -320,7 +288,6 @@ capturePhotoBtn.addEventListener("click", async () => {
     ctx.drawImage(webcam, 0, 0);
     stream.getTracks().forEach(track => track.stop());
     webcam.style.display = "none";
-
     const imgData = canvas.toDataURL("image/png");
     socket.emit("fileUpload", {
       fileName: `photo_${Date.now()}.png`,
@@ -334,17 +301,8 @@ window.addEventListener("load", () => {
   const emojiBtn = document.getElementById("emoji-btn");
   const emojiPanel = document.getElementById("emoji-panel");
   const emojiInput = document.getElementById("msg");
-
-  const emojiList = [
-    "😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃","😉","😌","😍","😘","😗",
-    "😙","😚","😋","😛","😜","🤪","😝","🤑","🤗","🤭","🤫","🤔","🤐","🤨","😐","😑","😶",
-    "😏","😒","🙄","😬","🤥","😌","😔","😪","🤤","😴","😷","🤒","🤕","🤢","🤮","🤧","🥵",
-    "🥶","🥴","😵","🤯","🤠","🥳","😎","🤓","🧐","😕","😟","🙁","☹️","😮","😯","😲","😳",
-    "🥺","😦","😧","😨","😰","😥","😢","😭","😱","😖","😣","😞","😓","😩","😫","🥱","😤",
-    "😡","😠","🤬","😈","👿"
-  ];
-
-  // Populate emoji panel
+  const emojiList = ["😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃","😉","😌","😍","😘","😗","😙","😚","😋","😛","😜","🤪","😝","🤑","🤗","🤭","🤫","🤔","🤐","🤨","😐","😑","😶","😏","😒","🙄","😬","🤥","😌","😔","😪","🤤","😴","😷","🤒","🤕","🤢","🤮","🤧","🥵","🥶","🥴","😵","🤯","🤠","🥳","😎","🤓","🧐","😕","😟","🙁","☹️","😮","😯","😲","😳","🥺","😦","😧","😨","😰","😥","😢","😭","😱","😖","😣","😞","😓","😩","😫","🥱","😤","😡","😠","🤬","😈","👿"];
+  emojiPanel.innerHTML = "";
   emojiList.forEach(emoji => {
     const btn = document.createElement("button");
     btn.textContent = emoji;
@@ -360,14 +318,10 @@ window.addEventListener("load", () => {
     });
     emojiPanel.appendChild(btn);
   });
-
-  // Toggle panel
   emojiBtn.addEventListener("click", (e) => {
-    e.stopPropagation(); // prevent closing immediately
+    e.stopPropagation();
     emojiPanel.style.display = emojiPanel.style.display === "none" ? "block" : "none";
   });
-
-  // Hide when clicking outside
   document.addEventListener("click", (e) => {
     if (!emojiPanel.contains(e.target) && e.target !== emojiBtn) {
       emojiPanel.style.display = "none";
