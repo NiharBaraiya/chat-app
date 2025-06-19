@@ -301,4 +301,74 @@ searchButton.addEventListener("click", () => {
     alert(`❌ No message found containing: "${keyword}"`);
   }
 });
+const recordAudioBtn = document.getElementById("record-audio");
+const capturePhotoBtn = document.getElementById("capture-photo");
+const webcam = document.getElementById("webcam");
+const canvas = document.getElementById("snapshot");
+
+let mediaRecorder;
+let audioChunks = [];
+
+// 🎤 AUDIO RECORDING
+recordAudioBtn.addEventListener("click", async () => {
+  if (!navigator.mediaDevices) {
+    alert("Audio not supported on your device.");
+    return;
+  }
+
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+  mediaRecorder = new MediaRecorder(stream);
+  mediaRecorder.start();
+  recordAudioBtn.textContent = "⏹️";
+
+  mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+  mediaRecorder.onstop = () => {
+    const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      socket.emit("audioMessage", {
+        fileData: reader.result,
+        fileName: `voice_${Date.now()}.webm`,
+        fileType: "audio/webm",
+      });
+    };
+    reader.readAsDataURL(audioBlob);
+    audioChunks = [];
+    recordAudioBtn.textContent = "🎤";
+  };
+
+  setTimeout(() => {
+    if (mediaRecorder.state === "recording") mediaRecorder.stop();
+  }, 10000); // 10s limit
+});
+
+// 📷 WEBCAM CAPTURE
+capturePhotoBtn.addEventListener("click", async () => {
+  if (!navigator.mediaDevices) {
+    alert("Camera not supported.");
+    return;
+  }
+
+  const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+  webcam.srcObject = stream;
+  webcam.style.display = "block";
+
+  setTimeout(() => {
+    const ctx = canvas.getContext("2d");
+    canvas.width = webcam.videoWidth;
+    canvas.height = webcam.videoHeight;
+    ctx.drawImage(webcam, 0, 0);
+
+    stream.getTracks().forEach(track => track.stop());
+    webcam.style.display = "none";
+
+    const imgData = canvas.toDataURL("image/png");
+    socket.emit("fileUpload", {
+      fileName: `photo_${Date.now()}.png`,
+      fileData: imgData,
+      fileType: "image/png",
+    });
+  }, 3000); // Auto capture after 3 seconds
+});
 
