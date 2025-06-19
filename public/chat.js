@@ -229,14 +229,11 @@ socket.on("fileShared", ({ user, fileName, fileData, fileType, time }) => {
   const icon = fileIcons[fileExt] || fileIcons.default;
 
   let content;
-  if (fileType.startsWith("image/")) {
-    content = `
-      <a href="${downloadUrl}" download="${fileName}" target="_blank">
-        <img src="${downloadUrl}" alt="${fileName}" class="shared-img" />
-      </a>`;
-  } else {
-    content = `<a href="${downloadUrl}" download="${fileName}" class="file-link">${icon} ${fileName}</a>`;
-  }
+  if (fileType.startsWith("audio/")) {
+  content = `<audio controls src="${downloadUrl}"></audio>`;
+} else {
+  content = `<a href="${downloadUrl}" download="${fileName}" class="file-link">${icon} ${fileName}</a>`;
+}
 
   li.innerHTML = `<strong>${user === name ? "You" : user}:</strong> ${content}`;
   messages.appendChild(li);
