@@ -284,25 +284,21 @@ searchButton.addEventListener("click", () => {
   const allMessages = document.querySelectorAll("#messages .chat-message");
   let found = false;
 
-  allMessages.forEach(msg => {
-    msg.classList.remove("search-highlight");
-  });
+  allMessages.forEach(msg => msg.classList.remove("search-highlight"));
 
   for (const msg of allMessages) {
-    const text = msg.dataset.text || msg.textContent;
-    if (text.toLowerCase().includes(keyword)) {
+    const msgText = msg.dataset.text?.toLowerCase() || msg.textContent.toLowerCase();
+    if (msgText.includes(keyword)) {
       msg.scrollIntoView({ behavior: "smooth", block: "center" });
       msg.classList.add("search-highlight");
       found = true;
-
-      setTimeout(() => {
-        msg.classList.remove("search-highlight");
-      }, 5000); // remove highlight after 5 sec
+      setTimeout(() => msg.classList.remove("search-highlight"), 5000);
       break;
     }
   }
 
   if (!found) {
-    alert("No matching message found.");
+    alert(`No message found matching: "${keyword}"`);
   }
 });
+
