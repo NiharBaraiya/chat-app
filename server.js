@@ -160,6 +160,15 @@ socket.on("chatMessage", ({ text, id }) => {
     }
   });
 });
+socket.on("audioMessage", (audio) => {
+  io.to(user.room).emit("fileShared", {
+    user: user.name,
+    fileName: audio.fileName,
+    fileData: audio.fileData,
+    fileType: audio.fileType,
+    time: formatTime(new Date()),
+  });
+});
 
 function formatMessage(user, text) {
   const message = {
