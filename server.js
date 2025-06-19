@@ -54,19 +54,19 @@ io.on("connection", (socket) => {
     });
   });
 
-socket.on("chatMessage", ({ text, id }) => {
-  const user = users[socket.id];
-  if (user) {
-    const message = {
-      id: id || crypto.randomUUID(),
-      user: user.name,
-      text,
-      time: getCurrentTime()
-    };
-    messages[message.id] = message;
-    io.to(user.room).emit("message", message);
-  }
-});
+  socket.on("chatMessage", ({ text, id }) => {
+    const user = users[socket.id];
+    if (user) {
+      const message = {
+        id: id || crypto.randomUUID(),
+        user: user.name,
+        text,
+        time: getCurrentTime()
+      };
+      messages[message.id] = message;
+      io.to(user.room).emit("message", message);
+    }
+  });
 
   socket.on("seenMessage", (messageId) => {
     const user = users[socket.id];
@@ -99,6 +99,19 @@ socket.on("chatMessage", ({ text, id }) => {
         time,
       });
     }
+  });
+
+  socket.on("audioMessage", (audio) => {
+    const user = users[socket.id];
+    if (!user) return;
+
+    io.to(user.room).emit("fileShared", {
+      user: user.name,
+      fileName: audio.fileName,
+      fileData: audio.fileData,
+      fileType: audio.fileType,
+      time: getCurrentTime(),
+    });
   });
 
   socket.on("addReaction", ({ messageId, emoji }) => {
@@ -158,15 +171,6 @@ socket.on("chatMessage", ({ text, id }) => {
 
       delete users[socket.id];
     }
-  });
-});
-socket.on("audioMessage", (audio) => {
-  io.to(user.room).emit("fileShared", {
-    user: user.name,
-    fileName: audio.fileName,
-    fileData: audio.fileData,
-    fileType: audio.fileType,
-    time: formatTime(new Date()),
   });
 });
 
