@@ -36,10 +36,12 @@
             <input id="msg" type="text" placeholder="Your message..." autocomplete="off" required />
           </div>
 
-         <!-- Emoji Button and Panel -->
- <div style="position: relative;">
+<!-- Add this near your input area -->
+<div style="position: relative;">
   <button id="emoji-btn" type="button">😊</button>
-  <div id="emoji-panel" style="display: none; position: absolute; background: #fff; border: 1px solid #ccc; max-height: 150px; overflow-y: auto; z-index: 1000;"></div>
+  <div id="emoji-panel"
+       style="display: none; position: absolute; bottom: 40px; background: #fff; border: 1px solid #ccc; padding: 5px; border-radius: 5px; max-height: 150px; overflow-y: auto; z-index: 999;">
+  </div>
 </div>
 
 
