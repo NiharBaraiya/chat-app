@@ -335,52 +335,55 @@ capturePhotoBtn.addEventListener("click", async () => {
 // emojiBtn.addEventListener("click", (e) => { ... });
 
 // ✅ Insert this instead:
-const emojiList = [
-  "😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃","😉","😌","😍","😘","😗",
-  "😙","😚","😋","😛","😜","🤪","😝","🤑","🤗","🤭","🤫","🤔","🤐","🤨","😐","😑","😶",
-  "😏","😒","🙄","😬","🤥","😌","😔","😪","🤤","😴","😷","🤒","🤕","🤢","🤮","🤧","🥵",
-  "🥶","🥴","😵","🤯","🤠","🥳","😎","🤓","🧐","😕","😟","🙁","☹️","😮","😯","😲","😳",
-  "🥺","😦","😧","😨","😰","😥","😢","😭","😱","😖","😣","😞","😓","😩","😫","🥱","😤",
-  "😡","😠","🤬","😈","👿"
-];
+document.addEventListener("DOMContentLoaded", () => {
+  const emojiList = [
+    "😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃","😉","😌","😍","😘","😗",
+    "😙","😚","😋","😛","😜","🤪","😝","🤑","🤗","🤭","🤫","🤔","🤐","🤨","😐","😑","😶",
+    "😏","😒","🙄","😬","🤥","😌","😔","😪","🤤","😴","😷","🤒","🤕","🤢","🤮","🤧","🥵",
+    "🥶","🥴","😵","🤯","🤠","🥳","😎","🤓","🧐","😕","😟","🙁","☹️","😮","😯","😲","😳",
+    "🥺","😦","😧","😨","😰","😥","😢","😭","😱","😖","😣","😞","😓","😩","😫","🥱","😤",
+    "😡","😠","🤬","😈","👿"
+  ];
 
-// ✅ Render emojis inside the emojiPanel
-function populateEmojiPanel() {
-  emojiPanel.innerHTML = ""; // Clear if already populated
-  emojiList.forEach(emoji => {
-    const btn = document.createElement("button");
-    btn.textContent = emoji;
-    btn.type = "button";
-    btn.className = "emoji-btn";
-    btn.style.fontSize = "20px";
-    btn.style.margin = "2px";
-    btn.style.cursor = "pointer";
-    btn.addEventListener("click", () => {
-      input.value += emoji;
-      input.focus();
-      emojiPanel.style.display = "none";
+  const emojiBtn = document.getElementById("emoji-btn");
+  const emojiPanel = document.getElementById("emoji-panel");
+  const input = document.getElementById("msg");
+
+  function populateEmojiPanel() {
+    emojiPanel.innerHTML = ""; // clear previous
+    emojiList.forEach(emoji => {
+      const btn = document.createElement("button");
+      btn.textContent = emoji;
+      btn.type = "button";
+      btn.className = "emoji-btn";
+      btn.style.fontSize = "20px";
+      btn.style.margin = "2px";
+      btn.style.cursor = "pointer";
+      btn.addEventListener("click", () => {
+        input.value += emoji;
+        input.focus();
+        emojiPanel.style.display = "none";
+      });
+      emojiPanel.appendChild(btn);
     });
-    emojiPanel.appendChild(btn);
+  }
+
+  emojiBtn.addEventListener("click", (e) => {
+    const rect = emojiBtn.getBoundingClientRect();
+    emojiPanel.style.left = `${rect.left}px`;
+    emojiPanel.style.top = `${rect.bottom + window.scrollY}px`;
+
+    if (emojiPanel.style.display === "none" || emojiPanel.innerHTML.trim() === "") {
+      populateEmojiPanel();
+      emojiPanel.style.display = "block";
+    } else {
+      emojiPanel.style.display = "none";
+    }
   });
-}
 
-// ✅ Show/hide emoji panel
-emojiBtn.addEventListener("click", (e) => {
-  const rect = emojiBtn.getBoundingClientRect();
-  emojiPanel.style.left = `${rect.left}px`;
-  emojiPanel.style.top = `${rect.bottom + window.scrollY}px`;
-
-  if (emojiPanel.style.display === "none" || emojiPanel.innerHTML.trim() === "") {
-    populateEmojiPanel();
-    emojiPanel.style.display = "block";
-  } else {
-    emojiPanel.style.display = "none";
-  }
-});
-
-// ✅ Hide when clicking outside
-document.addEventListener("click", (e) => {
-  if (!emojiPanel.contains(e.target) && e.target !== emojiBtn) {
-    emojiPanel.style.display = "none";
-  }
+  document.addEventListener("click", (e) => {
+    if (!emojiPanel.contains(e.target) && e.target !== emojiBtn) {
+      emojiPanel.style.display = "none";
+    }
+  });
 });
