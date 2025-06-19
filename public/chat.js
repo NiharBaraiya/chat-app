@@ -301,16 +301,14 @@ window.addEventListener("load", () => {
   const emojiBtn = document.getElementById("emoji-btn");
   const emojiPanel = document.getElementById("emoji-panel");
   const emojiInput = document.getElementById("msg");
-  const emojiList = ["😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃","😉","😌","😍","😘","😗","😙","😚","😋","😛","😜","🤪","😝","🤑","🤗","🤭","🤫","🤔","🤐","🤨","😐","😑","😶","😏","😒","🙄","😬","🤥","😌","😔","😪","🤤","😴","😷","🤒","🤕","🤢","🤮","🤧","🥵","🥶","🥴","😵","🤯","🤠","🥳","😎","🤓","🧐","😕","😟","🙁","☹️","😮","😯","😲","😳","🥺","😦","😧","😨","😰","😥","😢","😭","😱","😖","😣","😞","😓","😩","😫","🥱","😤","😡","😠","🤬","😈","👿"];
-  emojiPanel.innerHTML = "";
+
+  const emojiList = [ "😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "😊", "😇", "🙂", "🙃", "😉" ]; // and more...
+
   emojiList.forEach(emoji => {
     const btn = document.createElement("button");
     btn.textContent = emoji;
-    btn.type = "button";
     btn.className = "emoji-btn";
-    btn.style.fontSize = "18px";
-    btn.style.margin = "2px";
-    btn.style.cursor = "pointer";
+    btn.type = "button";
     btn.addEventListener("click", () => {
       emojiInput.value += emoji;
       emojiInput.focus();
@@ -318,10 +316,15 @@ window.addEventListener("load", () => {
     });
     emojiPanel.appendChild(btn);
   });
+
   emojiBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     emojiPanel.style.display = emojiPanel.style.display === "none" ? "block" : "none";
+    const rect = emojiBtn.getBoundingClientRect();
+    emojiPanel.style.top = `${rect.bottom + window.scrollY}px`;
+    emojiPanel.style.left = `${rect.left + window.scrollX}px`;
   });
+
   document.addEventListener("click", (e) => {
     if (!emojiPanel.contains(e.target) && e.target !== emojiBtn) {
       emojiPanel.style.display = "none";
