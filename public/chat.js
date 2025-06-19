@@ -356,6 +356,12 @@ emojiBtn.addEventListener("click", () => {
   emojiPanel.style.display = emojiPanel.style.display === "none" ? "block" : "none";
 });
 
+emojiBtn.addEventListener("click", (e) => {
+  const rect = emojiBtn.getBoundingClientRect();
+  emojiPanel.style.left = `${rect.left}px`;
+  emojiPanel.style.top = `${rect.bottom + window.scrollY}px`;
+  emojiPanel.style.display = emojiPanel.style.display === "none" ? "block" : "none";
+});
 document.addEventListener("click", (e) => {
   if (!emojiPanel.contains(e.target) && e.target !== emojiBtn) {
     emojiPanel.style.display = "none";
