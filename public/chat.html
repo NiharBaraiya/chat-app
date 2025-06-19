@@ -1,34 +1,84 @@
-<!-- ✅ Put this inside the same line with input and emoji button -->
-<form id="chatForm">
-  <div class="input-bar" style="display: flex; align-items: center; gap: 6px; position: relative;">
 
-    <!-- ✅ Message Input -->
-    <div class="input-group">
-      <input id="msg" type="text" placeholder="Your message..." autocomplete="off" required />
-    </div>
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Room Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="chat-container">
 
-    <!-- ✅ Emoji Button and Panel (Fixed) -->
-    <div style="position: relative;">
-      <button id="emoji-btn" type="button">😊</button>
-      <div id="emoji-panel"
-        style="display: none; position: absolute; bottom: 40px; left: 0; background: #fff; border: 1px solid #ccc; padding: 5px; border-radius: 5px; max-height: 150px; overflow-y: auto; width: 250px; z-index: 999; white-space: normal;">
-      </div>
-    </div>
+    <!-- ✅ Sidebar -->
+    <aside class="sidebar">
+      <h3>👥 Users List</h3>
+      <ul id="user-list"></ul>
+    </aside>
 
-    <!-- ✅ File Upload -->
-    <label class="file-upload" title="Upload File">
-      📁 Upload
-      <input type="file" id="fileInput" hidden />
-    </label>
-    <progress id="uploadProgress" value="0" max="100" style="display: none;"></progress>
+    <!-- ✅ Chat Area -->
+    <div class="chat-main">
+      <h2 id="room-name">Room Chat</h2>
 
-    <!-- ✅ Buttons -->
-    <button type="submit">Send</button>
-    <button type="button" id="record-audio">🎤</button>
+      <!-- ✅ Messages -->
+      <ul id="messages"><div style="margin: 10px 0;">
+  <input id="searchInput" type="text" placeholder="🔍 Search messages..." style="padding: 5px; width: 200px;" />
+  <button id="searchButton" type="button">Search</button>
+</div>
+</ul>
+      <p id="typing"></p>
 
-    <video id="webcam" autoplay playsinline style="display:none; width:200px;"></video>
-    <canvas id="snapshot" style="display:none;"></canvas>
+      <!-- ✅ Chat Form -->
+      <form id="chatForm">
+        <div class="input-bar">
 
-    <button type="button" id="clearChat" class="clear-btn">🧹 Clear Chat</button>
+          <!-- ✅ Message Input -->
+          <div class="input-group">
+            <input id="msg" type="text" placeholder="Your message..." autocomplete="off" required />
+          </div>
+
+<!-- Add this near your input area -->
+<div style="position: relative;">
+  <button id="emoji-btn" type="button">😊</button>
+  <div id="emoji-panel"
+       style="display: none; position: absolute; bottom: 40px; background: #fff; border: 1px solid #ccc; padding: 5px; border-radius: 5px; max-height: 150px; overflow-y: auto; z-index: 999;">
   </div>
-</form>
+</div>
+
+
+
+          <!-- ✅ File Upload -->
+          <label class="file-upload" title="Upload File">
+            📁 Upload
+            <input type="file" id="fileInput" hidden />
+          </label>
+          <progress id="uploadProgress" value="0" max="100" style="display: none;"></progress>
+
+          <!-- ✅ Buttons -->
+          <button type="submit">Send</button>
+<button type="button" id="record-audio">🎤</button>
+
+<video id="webcam" autoplay playsinline style="display:none; width:200px;"></video>
+<canvas id="snapshot" style="display:none;"></canvas>
+
+          <button type="button" id="clearChat" class="clear-btn">🧹 Clear Chat</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ✅ Pinned Messages Container (added) -->
+  <div id="pinned-messages"></div>
+
+  <!-- ✅ Edit Modal -->
+  <div id="editModal" style="display:none; position:fixed; top:30%; left:50%; transform:translate(-50%, -50%); background:#fff; padding:20px; border:1px solid #ccc; z-index:1000;">
+    <h4>Edit Message</h4>
+    <input type="text" id="editMessageInput" style="width:100%; padding:8px; margin-bottom:10px;">
+    <button id="saveEditBtn">Save</button>
+    <button id="cancelEditBtn">Cancel</button>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="chat.js"></script>
+</body>
+</html>
