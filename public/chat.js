@@ -330,34 +330,47 @@ capturePhotoBtn.addEventListener("click", async () => {
   }, 3000);
 });
 
-const emojiBtn = document.getElementById("emoji-btn");
-const emojiPanel = document.getElementById("emoji-panel");
-const emojiInput = document.getElementById("msg");
-const emojiList = [
-  "😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃","😉","😌","😍","😘","😗",
-  "😙","😚","😋","😛","😜","🤪","😝","🤑","🤗","🤭","🤫","🤔","🤐","🤨","😐","😑","😶",
-  "😏","😒","🙄","😬","🤥","😌","😔","😪","🤤","😴","😷","🤒","🤕","🤢","🤮","🤧","🥵",
-  "🥶","🥴","😵","🤯","🤠","🥳","😎","🤓","🧐","😕","😟","🙁","☹️","😮","😯","😲","😳",
-  "🥺","😦","😧","😨","😰","😥","😢","😭","😱","😖","😣","😞","😓","😩","😫","🥱","😤",
-  "😡","😠","🤬","😈","👿"
-];
-emojiList.forEach(emoji => {
-  const btn = document.createElement("button");
-  btn.textContent = emoji;
-  btn.type = "button";
-  btn.className = "emoji-btn";
-  btn.addEventListener("click", () => {
-    emojiInput.value += emoji;
-    emojiInput.focus();
-    emojiPanel.style.display = "none";
+window.addEventListener("load", () => {
+  const emojiBtn = document.getElementById("emoji-btn");
+  const emojiPanel = document.getElementById("emoji-panel");
+  const emojiInput = document.getElementById("msg");
+
+  const emojiList = [
+    "😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃","😉","😌","😍","😘","😗",
+    "😙","😚","😋","😛","😜","🤪","😝","🤑","🤗","🤭","🤫","🤔","🤐","🤨","😐","😑","😶",
+    "😏","😒","🙄","😬","🤥","😌","😔","😪","🤤","😴","😷","🤒","🤕","🤢","🤮","🤧","🥵",
+    "🥶","🥴","😵","🤯","🤠","🥳","😎","🤓","🧐","😕","😟","🙁","☹️","😮","😯","😲","😳",
+    "🥺","😦","😧","😨","😰","😥","😢","😭","😱","😖","😣","😞","😓","😩","😫","🥱","😤",
+    "😡","😠","🤬","😈","👿"
+  ];
+
+  // Populate emoji panel
+  emojiList.forEach(emoji => {
+    const btn = document.createElement("button");
+    btn.textContent = emoji;
+    btn.type = "button";
+    btn.className = "emoji-btn";
+    btn.style.fontSize = "18px";
+    btn.style.margin = "2px";
+    btn.style.cursor = "pointer";
+    btn.addEventListener("click", () => {
+      emojiInput.value += emoji;
+      emojiInput.focus();
+      emojiPanel.style.display = "none";
+    });
+    emojiPanel.appendChild(btn);
   });
-  emojiPanel.appendChild(btn);
-});
-emojiBtn.addEventListener("click", () => {
-  emojiPanel.style.display = emojiPanel.style.display === "none" ? "block" : "none";
-});
-document.addEventListener("click", (e) => {
-  if (!emojiPanel.contains(e.target) && e.target !== emojiBtn) {
-    emojiPanel.style.display = "none";
-  }
+
+  // Toggle panel
+  emojiBtn.addEventListener("click", (e) => {
+    e.stopPropagation(); // prevent closing immediately
+    emojiPanel.style.display = emojiPanel.style.display === "none" ? "block" : "none";
+  });
+
+  // Hide when clicking outside
+  document.addEventListener("click", (e) => {
+    if (!emojiPanel.contains(e.target) && e.target !== emojiBtn) {
+      emojiPanel.style.display = "none";
+    }
+  });
 });
