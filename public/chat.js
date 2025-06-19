@@ -20,6 +20,8 @@ const recordAudioBtn = document.getElementById("record-audio");
 const capturePhotoBtn = document.getElementById("capture-photo");
 const webcam = document.getElementById("webcam");
 const canvas = document.getElementById("snapshot");
+const emojiBtn = document.getElementById("emoji-btn");
+const emojiPanel = document.getElementById("emoji-panel");
 
 let mediaRecorder;
 let audioChunks = [];
@@ -229,9 +231,7 @@ socket.on("fileShared", ({ user, fileName, fileData, fileType, time }) => {
   const icon = fileIcons[fileExt] || fileIcons.default;
 
   let content;
-  if (fileType.startsWith("audio/")) {
-    content = `<audio controls><source src="${downloadUrl}" type="${fileType}"></audio>`;
-  } else if (fileType.startsWith("image/")) {
+  if (fileType.startsWith("image/")) {
     content = `<a href="${downloadUrl}" download="${fileName}" target="_blank">
       <img src="${downloadUrl}" alt="${fileName}" class="shared-img" /></a>`;
   } else {
@@ -239,6 +239,20 @@ socket.on("fileShared", ({ user, fileName, fileData, fileType, time }) => {
   }
 
   li.innerHTML = `<strong>${user === name ? "You" : user}:</strong> ${content}`;
+  messages.appendChild(li);
+  messages.scrollTop = messages.scrollHeight;
+});
+
+socket.on("audioMessage", ({ user, fileName, fileData, fileType }) => {
+  const li = document.createElement("li");
+  li.classList.add("chat-message", user === name ? "sender" : "receiver");
+
+  const audio = document.createElement("audio");
+  audio.controls = true;
+  audio.src = fileData;
+
+  li.innerHTML = `<strong>${user === name ? "You" : user}:</strong> `;
+  li.appendChild(audio);
   messages.appendChild(li);
   messages.scrollTop = messages.scrollHeight;
 });
@@ -314,4 +328,36 @@ capturePhotoBtn.addEventListener("click", async () => {
       fileType: "image/png",
     });
   }, 3000);
+});
+
+const emojiList = [
+  "😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃","😉","😌","😍","😘","😗",
+  "😙","😚","😋","😛","😜","🤪","😝","🤑","🤗","🤭","🤫","🤔","🤐","🤨","😐","😑","😶",
+  "😏","😒","🙄","😬","🤥","😌","😔","😪","🤤","😴","😷","🤒","🤕","🤢","🤮","🤧","🥵",
+  "🥶","🥴","😵","🤯","🤠","🥳","😎","🤓","🧐","😕","😟","🙁","☹️","😮","😯","😲","😳",
+  "🥺","😦","😧","😨","😰","😥","😢","😭","😱","😖","😣","😞","😓","😩","😫","🥱","😤",
+  "😡","😠","🤬","😈","👿"
+];
+
+emojiList.forEach(emoji => {
+  const btn = document.createElement("button");
+  btn.textContent = emoji;
+  btn.type = "button";
+  btn.className = "emoji-btn";
+  btn.addEventListener("click", () => {
+    input.value += emoji;
+    input.focus();
+    emojiPanel.style.display = "none";
+  });
+  emojiPanel.appendChild(btn);
+});
+
+emojiBtn.addEventListener("click", () => {
+  emojiPanel.style.display = emojiPanel.style.display === "none" ? "block" : "none";
+});
+
+document.addEventListener("click", (e) => {
+  if (!emojiPanel.contains(e.target) && e.target !== emojiBtn) {
+    emojiPanel.style.display = "none";
+  }
 });
