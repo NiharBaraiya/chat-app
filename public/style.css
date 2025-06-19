@@ -173,6 +173,14 @@ h2 {
   margin-right: 6px;
 }
 
+audio {
+  max-width: 250px;
+  margin-top: 5px;
+}
+video#webcam {
+  border: 2px solid #ccc;
+  border-radius: 10px;
+}
 
 
 /* ==== MESSAGES ==== */
