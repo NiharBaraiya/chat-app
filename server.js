@@ -1,199 +1,363 @@
-const express = require("express");
-const path = require("path");
-const app = express();
-const http = require("http").createServer(app);
-const { Server } = require("socket.io");
-const io = new Server(http);
-const crypto = require("crypto");
-const PORT = process.env.PORT || 3000;
+const socket = io();
 
-app.use(express.static(path.join(__dirname, "public"), { index: false }));
+const urlParams = new URLSearchParams(window.location.search);
+const name = urlParams.get("name");
+const room = urlParams.get("room");
 
-app.get("/", (req, res) => {
-  const host = req.headers.host;
-  if (host.includes("localhost")) {
-    res.sendFile(path.join(__dirname, "public", "index.html"));
-  } else {
-    res.sendFile(path.join(__dirname, "public", "simple.html"));
+const form = document.getElementById("chatForm");
+const input = document.getElementById("msg");
+const messages = document.getElementById("messages");
+const typing = document.getElementById("typing");
+const roomNameElem = document.getElementById("room-name");
+const userList = document.getElementById("user-list");
+const clearButton = document.getElementById("clearChat");
+const fileInput = document.getElementById("fileInput");
+const uploadProgress = document.getElementById("uploadProgress");
+const pinnedContainer = document.getElementById("pinned-messages");
+const searchInput = document.getElementById("searchInput");
+const searchButton = document.getElementById("searchButton");
+const recordAudioBtn = document.getElementById("record-audio");
+const capturePhotoBtn = document.getElementById("capture-photo");
+const webcam = document.getElementById("webcam");
+const canvas = document.getElementById("snapshot");
+const emojiBtn = document.getElementById("emoji-btn");
+const emojiPanel = document.getElementById("emoji-panel");
+
+let mediaRecorder;
+let audioChunks = [];
+
+if (name && room) {
+  socket.emit("joinRoom", { name, room });
+  roomNameElem.innerText = `${room} Room`;
+}
+
+form.addEventListener("submit", (e) => {
+  e.preventDefault();
+  if (input.value.trim()) {
+    const messageId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    socket.emit("chatMessage", { text: input.value, id: messageId });
+    input.value = "";
+    input.focus();
   }
 });
 
-app.get("/simple", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "simple.html"));
+messages.addEventListener("contextmenu", (e) => {
+  e.preventDefault();
+  const li = e.target.closest("li.chat-message.sender");
+  if (!li) return;
+
+  const messageId = li.dataset.id;
+  const currentText = li.dataset.text;
+  if (!messageId) return;
+
+  const menu = document.createElement("div");
+  menu.className = "context-menu";
+  menu.innerHTML = `
+    <button class="edit-btn">✏️ Edit</button>
+    <button class="delete-btn">🗑️ Delete</button>
+    <button class="pin-btn">📌 Pin</button>
+  `;
+  document.body.appendChild(menu);
+  menu.style.top = `${e.pageY}px`;
+  menu.style.left = `${e.pageX}px`;
+
+  const removeMenu = () => menu.remove();
+  document.addEventListener("click", removeMenu, { once: true });
+
+  menu.querySelector(".edit-btn").onclick = () => {
+    const newText = prompt("Edit your message:", currentText);
+    if (newText && newText !== currentText) {
+      socket.emit("editMessage", { messageId, newText });
+    }
+  };
+
+  menu.querySelector(".delete-btn").onclick = () => {
+    if (confirm("Are you sure you want to delete this message?")) {
+      socket.emit("deleteMessage", messageId);
+    }
+  };
+
+  menu.querySelector(".pin-btn").onclick = () => {
+    socket.emit("pinMessage", messageId);
+  };
 });
 
-app.get("/index", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
-
-const users = {};
-const roomUsers = {};
-const messages = {};
-
-io.on("connection", (socket) => {
-  socket.on("joinRoom", ({ name, room }) => {
-    const currentUser = { name, room };
-    users[socket.id] = currentUser;
-    socket.join(room);
-
-    if (!roomUsers[room]) roomUsers[room] = new Set();
-
-    const existing = [...roomUsers[room]];
-    if (existing.length > 0) {
-      socket.emit("message", formatMessage("System", `${existing.join(", ")} already joined this chat.`));
-    }
-
-    roomUsers[room].add(name);
-
-    socket.emit("message", formatMessage("System", `Welcome ${name}!`));
-    socket.broadcast.to(room).emit("message", formatMessage("System", `${name} joined the chat.`));
-
-    io.to(room).emit("roomUsers", {
-      room,
-      users: [...roomUsers[room]].map(name => ({ name })),
-    });
-  });
-
-  socket.on("chatMessage", ({ text, id }) => {
-    const user = users[socket.id];
-    if (user) {
-      const message = {
-        id: id || crypto.randomUUID(),
-        user: user.name,
-        text,
-        time: getCurrentTime()
-      };
-      messages[message.id] = message;
-      io.to(user.room).emit("message", message);
-    }
-  });
-
-  socket.on("seenMessage", (messageId) => {
-    const user = users[socket.id];
-    const msg = messages[messageId];
-    if (user && msg) {
-      const senderSocketId = Object.keys(users).find(id => users[id].name === msg.user && users[id].room === user.room);
-      if (senderSocketId) {
-        io.to(senderSocketId).emit("messageSeen", messageId);
-      }
-    }
-  });
-
-  socket.on("typing", (status) => {
-    const user = users[socket.id];
-    if (user) {
-      const typingText = status ? `${user.name} is typing...` : "";
-      socket.to(user.room).emit("typing", typingText);
-    }
-  });
-
-  socket.on("fileUpload", ({ fileName, fileData, fileType }) => {
-    const user = users[socket.id];
-    if (user) {
-      const time = getCurrentTime();
-      io.to(user.room).emit("fileShared", {
-        user: user.name,
-        fileName,
-        fileData,
-        fileType,
-        time,
-      });
-    }
-  });
-
-  socket.on("audioMessage", (audio) => {
-    const user = users[socket.id];
-    if (!user) return;
-
-    io.to(user.room).emit("fileShared", {
-      user: user.name,
-      fileName: audio.fileName,
-      fileData: audio.fileData,
-      fileType: audio.fileType,
-      time: getCurrentTime(),
-    });
-  });
-
-  socket.on("addReaction", ({ messageId, emoji }) => {
-    const user = users[socket.id];
-    if (user) {
-      io.to(user.room).emit("reactionAdded", { messageId, emoji });
-    }
-  });
-
-  socket.on("editMessage", ({ messageId, newText }) => {
-    const user = users[socket.id];
-    const msg = messages[messageId];
-    if (!msg || !user) return;
-
-    if (msg.user === user.name) {
-      msg.text = newText;
-      io.to(user.room).emit("messageEdited", { messageId, newText });
-    }
-  });
-
-  socket.on("deleteMessage", (messageId) => {
-    const user = users[socket.id];
-    const msg = messages[messageId];
-    if (!msg || !user) return;
-
-    if (msg.user === user.name) {
-      delete messages[messageId];
-      io.to(user.room).emit("messageDeleted", messageId);
-    }
-  });
-
-  socket.on("pinMessage", (messageId) => {
-    const user = users[socket.id];
-    const msg = messages[messageId];
-    if (!msg || !user) return;
-
-    io.to(user.room).emit("messagePinned", msg);
-  });
-
-  socket.on("disconnect", () => {
-    const user = users[socket.id];
-    if (user) {
-      socket.to(user.room).emit("message", formatMessage("System", `${user.name} left the chat.`));
-      socket.to(user.room).emit("typing", "");
-
-      if (roomUsers[user.room]) {
-        roomUsers[user.room].delete(user.name);
-        if (roomUsers[user.room].size > 0) {
-          io.to(user.room).emit("roomUsers", {
-            room: user.room,
-            users: [...roomUsers[user.room]].map(name => ({ name })),
-          });
-        } else {
-          delete roomUsers[user.room];
+const observer = new IntersectionObserver(
+  (entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        const msgElem = entry.target;
+        const msgId = msgElem.dataset.id;
+        const isReceiver = msgElem.classList.contains("receiver");
+        if (isReceiver && msgId) {
+          socket.emit("seenMessage", msgId);
+          observer.unobserve(msgElem);
         }
       }
+    });
+  },
+  { threshold: 1.0 }
+);
 
-      delete users[socket.id];
-    }
+socket.on("message", (message) => {
+  const li = document.createElement("li");
+  li.classList.add("chat-message");
+  li.dataset.id = message.id;
+  li.dataset.text = message.text.toLowerCase();
+  li.id = message.id;
+
+  if (message.user === "System") {
+    li.classList.add("system-msg");
+    li.innerText = message.text;
+  } else if (message.user === name) {
+    li.classList.add("sender");
+    li.innerHTML = `<strong>You:</strong> ${message.text} <span class="seen-check" id="seen-${message.id}" data-status="sent">✔</span>`;
+  } else {
+    li.classList.add("receiver");
+    li.innerHTML = `<strong>${message.user}:</strong> ${message.text}`;
+    observer.observe(li);
+  }
+
+  messages.appendChild(li);
+  messages.scrollTop = messages.scrollHeight;
+});
+
+socket.on("messageSeen", (messageId) => {
+  const span = document.getElementById(`seen-${messageId}`);
+  if (span) {
+    span.textContent = "✔✔";
+    span.setAttribute("data-status", "seen");
+    span.style.color = "blue";
+    span.title = "Seen";
+  }
+});
+
+socket.on("messageEdited", ({ messageId, newText }) => {
+  const msgElem = document.getElementById(messageId);
+  if (msgElem) {
+    msgElem.innerHTML = msgElem.innerHTML.replace(/>.*</, `> ${newText} (edited) <`);
+  }
+});
+
+socket.on("messageDeleted", (messageId) => {
+  const msgElem = document.getElementById(messageId);
+  if (msgElem) msgElem.remove();
+});
+
+socket.on("messagePinned", (msg) => {
+  const originalMsg = document.getElementById(msg.id);
+  if (originalMsg && !originalMsg.classList.contains("pinned-highlight")) {
+    const pinIcon = document.createElement("span");
+    pinIcon.className = "pin-icon";
+    pinIcon.textContent = " 📌";
+    originalMsg.appendChild(pinIcon);
+    originalMsg.classList.add("pinned-highlight");
+  }
+});
+
+let typingTimeout;
+input.addEventListener("input", () => {
+  socket.emit("typing", true);
+  clearTimeout(typingTimeout);
+  typingTimeout = setTimeout(() => {
+    socket.emit("typing", false);
+  }, 1000);
+});
+
+socket.on("typing", (text) => {
+  typing.innerText = text || "";
+});
+
+clearButton.addEventListener("click", () => {
+  messages.innerHTML = "";
+});
+
+socket.on("roomUsers", ({ users }) => {
+  userList.innerHTML = "";
+  users.forEach((user) => {
+    const li = document.createElement("li");
+    li.textContent = user.name;
+    userList.appendChild(li);
   });
 });
 
-function formatMessage(user, text) {
-  const message = {
-    id: crypto.randomUUID(),
-    user,
-    text: typeof text === "string" ? text : JSON.stringify(text),
-    time: getCurrentTime()
+fileInput?.addEventListener("change", () => {
+  const file = fileInput.files[0];
+  if (!file) return;
+
+  const maxSize = 5 * 1024 * 1024;
+  if (file.size > maxSize) {
+    alert("❌ File too large. Max 5MB allowed.");
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onloadstart = () => {
+    uploadProgress.style.display = "block";
+    uploadProgress.value = 0;
   };
-  messages[message.id] = message;
-  return message;
-}
+  reader.onprogress = (e) => {
+    if (e.lengthComputable) {
+      const percent = (e.loaded / e.total) * 100;
+      uploadProgress.value = percent;
+    }
+  };
+  reader.onload = () => {
+    const base64 = reader.result;
+    socket.emit("fileUpload", {
+      fileName: file.name,
+      fileData: base64,
+      fileType: file.type,
+    });
+    uploadProgress.style.display = "none";
+    fileInput.value = "";
+  };
+  reader.readAsDataURL(file);
+});
 
-function getCurrentTime() {
-  return new Date().toLocaleTimeString("en-IN", {
-    timeZone: "Asia/Kolkata",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
+socket.on("fileShared", ({ user, fileName, fileData, fileType, time }) => {
+  const li = document.createElement("li");
+  li.classList.add("chat-message", user === name ? "sender" : "receiver");
+
+  const blob = new Blob([Uint8Array.from(atob(fileData.split(',')[1]), c => c.charCodeAt(0))], { type: fileType });
+  const downloadUrl = URL.createObjectURL(blob);
+
+  const fileExt = fileName.split('.').pop().toLowerCase();
+  const fileIcons = {
+    pdf: "📄", doc: "📝", docx: "📝", txt: "📃",
+    jpg: "🖼️", jpeg: "🖼️", png: "🖼️", gif: "🖼️",
+    zip: "🗜️", mp4: "🎥", mp3: "🎵", default: "📁"
+  };
+  const icon = fileIcons[fileExt] || fileIcons.default;
+
+  let content;
+  if (fileType.startsWith("image/")) {
+    content = `<a href="${downloadUrl}" download="${fileName}" target="_blank">
+      <img src="${downloadUrl}" alt="${fileName}" class="shared-img" /></a>`;
+  } else {
+    content = `<a href="${downloadUrl}" download="${fileName}" class="file-link">${icon} ${fileName}</a>`;
+  }
+
+  li.innerHTML = `<strong>${user === name ? "You" : user}:</strong> ${content}`;
+  messages.appendChild(li);
+  messages.scrollTop = messages.scrollHeight;
+});
+
+socket.on("audioMessage", ({ user, fileName, fileData, fileType }) => {
+  const li = document.createElement("li");
+  li.classList.add("chat-message", user === name ? "sender" : "receiver");
+
+  const audio = document.createElement("audio");
+  audio.controls = true;
+  audio.src = fileData;
+
+  li.innerHTML = `<strong>${user === name ? "You" : user}:</strong> `;
+  li.appendChild(audio);
+  messages.appendChild(li);
+  messages.scrollTop = messages.scrollHeight;
+});
+
+searchButton.addEventListener("click", () => {
+  const keyword = searchInput.value.trim().toLowerCase();
+  if (!keyword) return;
+
+  const allMessages = document.querySelectorAll("#messages .chat-message");
+  let found = false;
+
+  allMessages.forEach(msg => {
+    msg.classList.remove("search-highlight");
+    const rawText = msg.dataset.text || msg.textContent.toLowerCase();
+    if (!found && rawText.includes(keyword)) {
+      msg.scrollIntoView({ behavior: "smooth", block: "center" });
+      msg.classList.add("search-highlight");
+      found = true;
+      setTimeout(() => msg.classList.remove("search-highlight"), 5000);
+    }
   });
-}
 
-http.listen(PORT, () => {
-  console.log(`✅ Server running at http://localhost:${PORT}`);
+  if (!found) alert(`❌ No message found containing: "${keyword}"`);
+});
+
+recordAudioBtn.addEventListener("click", async () => {
+  if (!navigator.mediaDevices) return alert("Audio not supported on your device.");
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+  mediaRecorder = new MediaRecorder(stream);
+  mediaRecorder.start();
+  recordAudioBtn.textContent = "⏹️";
+
+  mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+  mediaRecorder.onstop = () => {
+    const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      socket.emit("audioMessage", {
+        fileData: reader.result,
+        fileName: `voice_${Date.now()}.webm`,
+        fileType: "audio/webm",
+      });
+    };
+    reader.readAsDataURL(audioBlob);
+    audioChunks = [];
+    recordAudioBtn.textContent = "🎤";
+  };
+
+  setTimeout(() => {
+    if (mediaRecorder.state === "recording") mediaRecorder.stop();
+  }, 10000);
+});
+
+capturePhotoBtn.addEventListener("click", async () => {
+  if (!navigator.mediaDevices) return alert("Camera not supported.");
+  const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+  webcam.srcObject = stream;
+  webcam.style.display = "block";
+
+  setTimeout(() => {
+    const ctx = canvas.getContext("2d");
+    canvas.width = webcam.videoWidth;
+    canvas.height = webcam.videoHeight;
+    ctx.drawImage(webcam, 0, 0);
+    stream.getTracks().forEach(track => track.stop());
+    webcam.style.display = "none";
+
+    const imgData = canvas.toDataURL("image/png");
+    socket.emit("fileUpload", {
+      fileName: `photo_${Date.now()}.png`,
+      fileData: imgData,
+      fileType: "image/png",
+    });
+  }, 3000);
+});
+
+const emojiList = [
+  "😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃","😉","😌","😍","😘","😗",
+  "😙","😚","😋","😛","😜","🤪","😝","🤑","🤗","🤭","🤫","🤔","🤐","🤨","😐","😑","😶",
+  "😏","😒","🙄","😬","🤥","😌","😔","😪","🤤","😴","😷","🤒","🤕","🤢","🤮","🤧","🥵",
+  "🥶","🥴","😵","🤯","🤠","🥳","😎","🤓","🧐","😕","😟","🙁","☹️","😮","😯","😲","😳",
+  "🥺","😦","😧","😨","😰","😥","😢","😭","😱","😖","😣","😞","😓","😩","😫","🥱","😤",
+  "😡","😠","🤬","😈","👿"
+];
+
+emojiList.forEach(emoji => {
+  const btn = document.createElement("button");
+  btn.textContent = emoji;
+  btn.type = "button";
+  btn.className = "emoji-btn";
+  btn.addEventListener("click", () => {
+    input.value += emoji;
+    input.focus();
+    emojiPanel.style.display = "none";
+  });
+  emojiPanel.appendChild(btn);
+});
+
+emojiBtn.addEventListener("click", () => {
+  emojiPanel.style.display = emojiPanel.style.display === "none" ? "block" : "none";
+});
+
+document.addEventListener("click", (e) => {
+  if (!emojiPanel.contains(e.target) && e.target !== emojiBtn) {
+    emojiPanel.style.display = "none";
+  }
 });
