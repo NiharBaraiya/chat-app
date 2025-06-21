@@ -120,6 +120,37 @@ socket.on("message", (message) => {
   messages.appendChild(li);
   messages.scrollTop = messages.scrollHeight;
 });
+socket.on("messageHistory", history => {
+  history.forEach(message => {
+    // Reuse your message-handling logic:
+    const ev = new CustomEvent("__injectHistory", { detail: message });
+    window.dispatchEvent(ev);
+  });
+});
+
+// Add this NEW listener:
+window.addEventListener("__injectHistory", (evt) => {
+  const message = evt.detail;
+  // Copy your `socket.on("message")` rendering code here:
+  const li = document.createElement("li");
+  li.classList.add("chat-message", message.user === name ? "sender" : "receiver");
+  li.dataset.id = message.id;
+  li.dataset.text = message.text.toLowerCase();
+  li.id = message.id;
+
+  if (message.user === "System") {
+    li.classList.add("system-msg");
+    li.innerText = message.text;
+  } else if (message.user === name) {
+    li.classList.add("sender");
+    li.innerHTML = `<strong>You:</strong> ${message.text} <span class="seen-check" id="seen-${message.id}" data-status="sent">✔</span>`;
+  } else {
+    li.classList.add("receiver");
+    li.innerHTML = `<strong>${message.user}:</strong> ${message.text}`;
+  }
+
+  messages.appendChild(li);
+});
 
 socket.on("messageSeen", (messageId) => {
   const span = document.getElementById(`seen-${messageId}`);
