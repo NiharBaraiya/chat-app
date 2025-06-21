@@ -40,7 +40,7 @@ form.addEventListener("submit", (e) => {
   }
 });
 
-// Context menu for edit/delete/pin
+// Context menu
 messages.addEventListener("contextmenu", (e) => {
   e.preventDefault();
   const li = e.target.closest("li.chat-message.sender");
@@ -82,7 +82,6 @@ messages.addEventListener("contextmenu", (e) => {
   };
 });
 
-// Typing indicator
 let typingTimeout;
 input.addEventListener("input", () => {
   socket.emit("typing", true);
@@ -119,7 +118,6 @@ searchButton.addEventListener("click", () => {
   if (!found) alert(`No message found containing: "${keyword}"`);
 });
 
-// Render emoji panel
 const emojiList = ["😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃"];
 function renderEmojiPanel() {
   emojiPanel.innerHTML = "";
@@ -148,7 +146,6 @@ document.addEventListener("click", (e) => {
 });
 renderEmojiPanel();
 
-// File upload
 fileInput?.addEventListener("change", () => {
   const file = fileInput.files[0];
   if (!file) return;
@@ -170,7 +167,6 @@ fileInput?.addEventListener("change", () => {
   reader.readAsDataURL(file);
 });
 
-// Audio recording
 recordAudioBtn.addEventListener("click", async () => {
   if (!navigator.mediaDevices) return alert("Audio not supported.");
   const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -197,18 +193,9 @@ recordAudioBtn.addEventListener("click", async () => {
   }, 10000);
 });
 
-// Receiving messages (text/file/audio)
-socket.on("message", (message) => {
-  renderMessage(message);
-});
-
-socket.on("fileShared", (file) => {
-  renderMessage(file);
-});
-
-socket.on("audioMessage", (audio) => {
-  renderMessage(audio);
-});
+socket.on("message", (msg) => renderMessage(msg));
+socket.on("fileShared", (msg) => renderMessage(msg));
+socket.on("audioMessage", (msg) => renderMessage(msg));
 
 function renderMessage(msg) {
   const li = document.createElement("li");
@@ -222,12 +209,8 @@ function renderMessage(msg) {
     li.classList.add("system-msg");
     li.innerText = msg.text;
   } else if (msg.fileType?.startsWith("image/")) {
-    const img = document.createElement("img");
-    img.src = msg.fileData;
-    img.className = "shared-img";
     li.classList.add(isYou ? "sender" : "receiver");
-    li.innerHTML = `<strong>${isYou ? "You" : msg.user}:</strong> `;
-    li.appendChild(img);
+    li.innerHTML = `<strong>${isYou ? "You" : msg.user}:</strong> <img src="${msg.fileData}" class="shared-img" />`;
   } else if (msg.fileType?.startsWith("audio/")) {
     const audio = document.createElement("audio");
     audio.controls = true;
@@ -255,7 +238,6 @@ function renderMessage(msg) {
   messages.scrollTop = messages.scrollHeight;
 }
 
-// Seen, edit, delete, pin
 socket.on("messageSeen", (id) => {
   const span = document.getElementById(`seen-${id}`);
   if (span) {
