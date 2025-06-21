@@ -199,6 +199,28 @@ video#webcam {
   margin-bottom: 10px;
 }
 
+/* Emoji Panel */
+#emoji-panel {
+  display: none;
+  position: absolute;
+  background: white;
+  border: 1px solid #ccc;
+  padding: 5px;
+  border-radius: 6px;
+  max-height: 150px;
+  overflow-y: auto;
+  z-index: 999;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  width: 250px;
+}
+
+.emoji-btn {
+  font-size: 22px;
+  margin: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
 
 
 #msg {
