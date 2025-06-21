@@ -205,20 +205,30 @@ socket.on("fileShared", ({ user, fileName, fileData, fileType }) => {
   const li = document.createElement("li");
   li.classList.add("chat-message", user === name ? "sender" : "receiver");
 
+  const fileExt = fileName.split('.').pop().toLowerCase();
   const blob = new Blob([Uint8Array.from(atob(fileData.split(',')[1]), c => c.charCodeAt(0))], { type: fileType });
-  const downloadUrl = URL.createObjectURL(blob);
+  const fileUrl = URL.createObjectURL(blob);
 
-  const icon = {
-    pdf: "📄", doc: "📝", docx: "📝", txt: "📃",
-    jpg: "🖼️", jpeg: "🖼️", png: "🖼️", gif: "🖼️",
-    zip: "🗜️", mp4: "🎥", mp3: "🎵", default: "📁"
-  }[fileName.split('.').pop().toLowerCase()] || "📁";
+  let fileContent = "";
 
-  li.innerHTML = `<strong>${user === name ? "You" : user}:</strong> ` +
-    (fileType.startsWith("image/") ? `<a href="${downloadUrl}" download><img src="${downloadUrl}" class="shared-img" /></a>` : `<a href="${downloadUrl}" download class="file-link">${icon} ${fileName}</a>`);
+  if (fileType.startsWith("image/")) {
+    fileContent = `<a href="${fileUrl}" download><img src="${fileUrl}" class="shared-img" /></a>`;
+  } else if (fileType.startsWith("audio/")) {
+    fileContent = `<audio controls src="${fileUrl}" style="margin-top:5px;"></audio>`;
+  } else {
+    const icon = {
+      pdf: "📄", doc: "📝", docx: "📝", txt: "📃",
+      jpg: "🖼️", jpeg: "🖼️", png: "🖼️", gif: "🖼️",
+      zip: "🗜️", mp4: "🎥", mp3: "🎵", default: "📁"
+    }[fileExt] || "📁";
+    fileContent = `<a href="${fileUrl}" download class="file-link">${icon} ${fileName}</a>`;
+  }
+
+  li.innerHTML = `<strong>${user === name ? "You" : user}:</strong> ${fileContent}`;
   messages.appendChild(li);
   messages.scrollTop = messages.scrollHeight;
 });
+
 
 socket.on("audioMessage", ({ user, fileData }) => {
   const li = document.createElement("li");
