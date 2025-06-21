@@ -66,6 +66,27 @@ h2 {
   word-wrap: break-word;
   transition: background-color 0.3s ease;
 }
+#emoji-panel {
+  display: none;
+  position: absolute;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  max-height: 200px;
+  width: 250px;
+  overflow-y: auto;
+  z-index: 9999;
+}
+
+.emoji-btn {
+  font-size: 20px;
+  padding: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
 
 /* Sent message */
 .chat-message.sender {
