@@ -120,37 +120,60 @@ socket.on("message", (message) => {
   messages.appendChild(li);
   messages.scrollTop = messages.scrollHeight;
 });
-socket.on("messageHistory", history => {
-  history.forEach(message => {
-    // Reuse your message-handling logic:
-    const ev = new CustomEvent("__injectHistory", { detail: message });
-    window.dispatchEvent(ev);
+socket.on("messageHistory", (history) => {
+  history.forEach((msg) => {
+    const li = document.createElement("li");
+    li.classList.add("chat-message");
+    li.dataset.id = msg.id;
+    li.dataset.text = (msg.text || "").toLowerCase();
+    li.id = msg.id;
+
+    const isYou = msg.user === name;
+    const isSystem = msg.user === "System";
+
+    if (isSystem) {
+      li.classList.add("system-msg");
+      li.innerText = msg.text;
+    } else if (msg.fileType) {
+      // File or Audio Message
+      li.classList.add(isYou ? "sender" : "receiver");
+
+      if (msg.fileType.startsWith("image/")) {
+        const blob = new Blob([Uint8Array.from(atob(msg.fileData.split(',')[1]), c => c.charCodeAt(0))], { type: msg.fileType });
+        const downloadUrl = URL.createObjectURL(blob);
+        li.innerHTML = `<strong>${isYou ? "You" : msg.user}:</strong> <a href="${downloadUrl}" download><img src="${downloadUrl}" class="shared-img" /></a>`;
+      } else if (msg.fileType.startsWith("audio/")) {
+        const audio = document.createElement("audio");
+        audio.controls = true;
+        audio.src = msg.fileData;
+        li.innerHTML = `<strong>${isYou ? "You" : msg.user}:</strong> `;
+        li.appendChild(audio);
+      } else {
+        const blob = new Blob([Uint8Array.from(atob(msg.fileData.split(',')[1]), c => c.charCodeAt(0))], { type: msg.fileType });
+        const downloadUrl = URL.createObjectURL(blob);
+        const icon = {
+          pdf: "📄", doc: "📝", docx: "📝", txt: "📃",
+          jpg: "🖼️", jpeg: "🖼️", png: "🖼️", gif: "🖼️",
+          zip: "🗜️", mp4: "🎥", mp3: "🎵", default: "📁"
+        }[msg.fileName?.split('.').pop()?.toLowerCase()] || "📁";
+
+        li.innerHTML = `<strong>${isYou ? "You" : msg.user}:</strong> <a href="${downloadUrl}" download class="file-link">${icon} ${msg.fileName}</a>`;
+      }
+    } else {
+      // Normal text message
+      li.classList.add(isYou ? "sender" : "receiver");
+      li.innerHTML = isYou
+        ? `<strong>You:</strong> ${msg.text} <span class="seen-check" id="seen-${msg.id}" data-status="sent">✔</span>`
+        : `<strong>${msg.user}:</strong> ${msg.text}`;
+      if (!isYou) observer.observe(li);
+    }
+
+    messages.appendChild(li);
   });
+
+  messages.scrollTop = messages.scrollHeight;
 });
 
-// Add this NEW listener:
-window.addEventListener("__injectHistory", (evt) => {
-  const message = evt.detail;
-  // Copy your `socket.on("message")` rendering code here:
-  const li = document.createElement("li");
-  li.classList.add("chat-message", message.user === name ? "sender" : "receiver");
-  li.dataset.id = message.id;
-  li.dataset.text = message.text.toLowerCase();
-  li.id = message.id;
-
-  if (message.user === "System") {
-    li.classList.add("system-msg");
-    li.innerText = message.text;
-  } else if (message.user === name) {
-    li.classList.add("sender");
-    li.innerHTML = `<strong>You:</strong> ${message.text} <span class="seen-check" id="seen-${message.id}" data-status="sent">✔</span>`;
-  } else {
-    li.classList.add("receiver");
-    li.innerHTML = `<strong>${message.user}:</strong> ${message.text}`;
-  }
-
-  messages.appendChild(li);
-});
 
 socket.on("messageSeen", (messageId) => {
   const span = document.getElementById(`seen-${messageId}`);
