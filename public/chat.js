@@ -278,10 +278,7 @@ recordAudioBtn.addEventListener("click", async () => {
 });
 
 // ✅ EMOJI PANEL LOGIC
-const emojiBtn = document.getElementById("emoji-btn");
-const emojiPanel = document.getElementById("emoji-panel");
 const emojiInput = document.getElementById("msg");
-
 const emojiList = ["😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "😊", "😇", "🙂", "🙃", "😉"];
 
 function renderEmojiPanel() {
