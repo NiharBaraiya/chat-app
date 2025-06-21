@@ -150,6 +150,12 @@ video#webcam {
   border: 2px solid #ccc;
   border-radius: 10px;
 }
+.emoji-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 20px;
+}
 
 
 
