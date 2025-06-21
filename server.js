@@ -28,7 +28,8 @@ app.get("/index", (req, res) => {
 
 const users = {};
 const roomUsers = {};
-const messages = {};
+const messages = {}; // All messages by ID
+const roomMessages = {}; // New: Messages by room
 
 io.on("connection", (socket) => {
   socket.on("joinRoom", ({ name, room }) => {
@@ -45,8 +46,13 @@ io.on("connection", (socket) => {
 
     roomUsers[room].add(name);
 
+    // Welcome + notify others
     socket.emit("message", formatMessage("System", `Welcome ${name}!`));
     socket.broadcast.to(room).emit("message", formatMessage("System", `${name} joined the chat.`));
+
+    // Send previous chat history
+    const history = roomMessages[room] || [];
+    socket.emit("messageHistory", history);
 
     io.to(room).emit("roomUsers", {
       room,
@@ -63,7 +69,13 @@ io.on("connection", (socket) => {
         text,
         time: getCurrentTime()
       };
+
       messages[message.id] = message;
+
+      // Save in roomMessages
+      if (!roomMessages[user.room]) roomMessages[user.room] = [];
+      roomMessages[user.room].push(message);
+
       io.to(user.room).emit("message", message);
     }
   });
@@ -91,13 +103,19 @@ io.on("connection", (socket) => {
     const user = users[socket.id];
     if (user) {
       const time = getCurrentTime();
-      io.to(user.room).emit("fileShared", {
+      const fileMsg = {
         user: user.name,
         fileName,
         fileData,
         fileType,
         time,
-      });
+      };
+
+      // Save file message
+      if (!roomMessages[user.room]) roomMessages[user.room] = [];
+      roomMessages[user.room].push(fileMsg);
+
+      io.to(user.room).emit("fileShared", fileMsg);
     }
   });
 
@@ -105,13 +123,18 @@ io.on("connection", (socket) => {
     const user = users[socket.id];
     if (!user) return;
 
-    io.to(user.room).emit("fileShared", {
+    const audioMsg = {
       user: user.name,
       fileName: audio.fileName,
       fileData: audio.fileData,
       fileType: audio.fileType,
       time: getCurrentTime(),
-    });
+    };
+
+    if (!roomMessages[user.room]) roomMessages[user.room] = [];
+    roomMessages[user.room].push(audioMsg);
+
+    io.to(user.room).emit("fileShared", audioMsg);
   });
 
   socket.on("addReaction", ({ messageId, emoji }) => {
@@ -128,6 +151,14 @@ io.on("connection", (socket) => {
 
     if (msg.user === user.name) {
       msg.text = newText;
+
+      // Also update in roomMessages
+      const room = user.room;
+      if (roomMessages[room]) {
+        const index = roomMessages[room].findIndex(m => m.id === messageId);
+        if (index !== -1) roomMessages[room][index].text = newText;
+      }
+
       io.to(user.room).emit("messageEdited", { messageId, newText });
     }
   });
@@ -139,6 +170,13 @@ io.on("connection", (socket) => {
 
     if (msg.user === user.name) {
       delete messages[messageId];
+
+      // Remove from roomMessages too
+      const room = user.room;
+      if (roomMessages[room]) {
+        roomMessages[room] = roomMessages[room].filter(m => m.id !== messageId);
+      }
+
       io.to(user.room).emit("messageDeleted", messageId);
     }
   });
