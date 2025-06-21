@@ -1,4 +1,4 @@
-// ✅ Chat.js (Fully Updated with Working Emoji Panel + All Features)
+// ✅ Chat.js (Fully Updated with Emoji Fix + All Features)
 
 const socket = io();
 
@@ -277,64 +277,35 @@ recordAudioBtn.addEventListener("click", async () => {
   }, 10000);
 });
 
-capturePhotoBtn?.addEventListener("click", async () => {
-  if (!navigator.mediaDevices) return alert("Camera not supported.");
-  const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-  webcam.srcObject = stream;
-  webcam.style.display = "block";
-
-  setTimeout(() => {
-    const ctx = canvas.getContext("2d");
-    canvas.width = webcam.videoWidth;
-    canvas.height = webcam.videoHeight;
-    ctx.drawImage(webcam, 0, 0);
-    stream.getTracks().forEach(track => track.stop());
-    webcam.style.display = "none";
-    const imgData = canvas.toDataURL("image/png");
-    socket.emit("fileUpload", {
-      fileName: `photo_${Date.now()}.png`,
-      fileData: imgData,
-      fileType: "image/png",
-    });
-  }, 3000);
+// ✅ Emoji Support Logic with Scrollbar Fix
+const emojiList = ["😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "😊", "😇", "🙂", "🙃", "😉"];
+emojiList.forEach(emoji => {
+  const btn = document.createElement("button");
+  btn.textContent = emoji;
+  btn.className = "emoji-btn";
+  btn.type = "button";
+  btn.addEventListener("click", () => {
+    input.value += emoji;
+    input.focus();
+    emojiPanel.style.display = "none";
+  });
+  emojiPanel.appendChild(btn);
 });
 
-window.addEventListener("DOMContentLoaded", () => {
-  const emojiBtn = document.getElementById("emoji-btn");
-  const emojiPanel = document.getElementById("emoji-panel");
-  const emojiInput = document.getElementById("msg");
-
-  // Clear existing emojis if any
-  emojiPanel.innerHTML = "";
-
-  const emojiList = ["😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "😊", "😇", "🙂", "🙃", "😉", "😍", "😘", "😜", "😎", "😢", "😭", "😡", "👍", "🙏", "🎉", "💯"];
-
-  emojiList.forEach((emoji) => {
-    const btn = document.createElement("button");
-    btn.textContent = emoji;
-    btn.className = "emoji-btn";
-    btn.type = "button";
-    btn.style.fontSize = "20px";
-    btn.style.margin = "2px";
-    btn.addEventListener("click", () => {
-      emojiInput.value += emoji;
-      emojiInput.focus();
-      emojiPanel.style.display = "none";
-    });
-    emojiPanel.appendChild(btn);
-  });
-
-  emojiBtn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    emojiPanel.style.display = emojiPanel.style.display === "none" ? "block" : "none";
+emojiBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+  if (emojiPanel.style.display === "block") {
+    emojiPanel.style.display = "none";
+  } else {
     const rect = emojiBtn.getBoundingClientRect();
-    emojiPanel.style.top = `${rect.bottom + window.scrollY}px`;
+    emojiPanel.style.top = `${rect.top + window.scrollY - emojiPanel.offsetHeight}px`;
     emojiPanel.style.left = `${rect.left + window.scrollX}px`;
-  });
+    emojiPanel.style.display = "block";
+  }
+});
 
-  document.addEventListener("click", (e) => {
-    if (!emojiPanel.contains(e.target) && e.target !== emojiBtn) {
-      emojiPanel.style.display = "none";
-    }
-  });
+document.addEventListener("click", (e) => {
+  if (!emojiPanel.contains(e.target) && e.target !== emojiBtn) {
+    emojiPanel.style.display = "none";
+  }
 });
