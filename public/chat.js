@@ -299,18 +299,26 @@ capturePhotoBtn?.addEventListener("click", async () => {
   }, 3000);
 });
 
-// ✅ Emoji Feature - Working
-const emojiList = ["😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "😊", "😇", "🙂", "🙃", "😉"];
-window.addEventListener("load", () => {
+window.addEventListener("DOMContentLoaded", () => {
+  const emojiBtn = document.getElementById("emoji-btn");
+  const emojiPanel = document.getElementById("emoji-panel");
+  const emojiInput = document.getElementById("msg");
+
+  // Clear existing emojis if any
   emojiPanel.innerHTML = "";
-  emojiList.forEach(emoji => {
+
+  const emojiList = ["😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "😊", "😇", "🙂", "🙃", "😉", "😍", "😘", "😜", "😎", "😢", "😭", "😡", "👍", "🙏", "🎉", "💯"];
+
+  emojiList.forEach((emoji) => {
     const btn = document.createElement("button");
     btn.textContent = emoji;
     btn.className = "emoji-btn";
     btn.type = "button";
+    btn.style.fontSize = "20px";
+    btn.style.margin = "2px";
     btn.addEventListener("click", () => {
-      input.value += emoji;
-      input.focus();
+      emojiInput.value += emoji;
+      emojiInput.focus();
       emojiPanel.style.display = "none";
     });
     emojiPanel.appendChild(btn);
