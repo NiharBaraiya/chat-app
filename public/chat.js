@@ -1,5 +1,3 @@
-// ✅ Chat.js (Fully Updated with Emoji Fix + All Features)
-
 const socket = io();
 
 const urlParams = new URLSearchParams(window.location.search);
@@ -30,13 +28,13 @@ let audioChunks = [];
 
 if (name && room) {
   socket.emit("joinRoom", { name, room });
-  roomNameElem.innerText = ${room} Room;
+  roomNameElem.innerText = `${room} Room`;
 }
 
 form.addEventListener("submit", (e) => {
   e.preventDefault();
   if (input.value.trim()) {
-    const messageId = ${Date.now()}-${Math.random().toString(36).substr(2, 9)};
+    const messageId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     socket.emit("chatMessage", { text: input.value, id: messageId });
     input.value = "";
     input.focus();
@@ -60,8 +58,8 @@ messages.addEventListener("contextmenu", (e) => {
     <button class="pin-btn">📌 Pin</button>
   `;
   document.body.appendChild(menu);
-  menu.style.top = ${e.pageY}px;
-  menu.style.left = ${e.pageX}px;
+  menu.style.top = `${e.pageY}px`;
+  menu.style.left = `${e.pageX}px`;
 
   const removeMenu = () => menu.remove();
   document.addEventListener("click", removeMenu, { once: true });
@@ -110,16 +108,17 @@ socket.on("message", (message) => {
     li.innerText = message.text;
   } else if (message.user === name) {
     li.classList.add("sender");
-    li.innerHTML = <strong>You:</strong> ${message.text} <span class="seen-check" id="seen-${message.id}" data-status="sent">✔</span>;
+    li.innerHTML = `<strong>You:</strong> ${message.text} <span class="seen-check" id="seen-${message.id}" data-status="sent">✔</span>`;
   } else {
     li.classList.add("receiver");
-    li.innerHTML = <strong>${message.user}:</strong> ${message.text};
+    li.innerHTML = `<strong>${message.user}:</strong> ${message.text}`;
     observer.observe(li);
   }
 
   messages.appendChild(li);
   messages.scrollTop = messages.scrollHeight;
 });
+
 socket.on("messageHistory", (history) => {
   history.forEach((msg) => {
     const li = document.createElement("li");
@@ -135,13 +134,12 @@ socket.on("messageHistory", (history) => {
       li.classList.add("system-msg");
       li.innerText = msg.text;
     } else if (msg.fileType) {
-      // File or Audio Message
       li.classList.add(isYou ? "sender" : "receiver");
 
       if (msg.fileType.startsWith("image/")) {
         const blob = new Blob([Uint8Array.from(atob(msg.fileData.split(',')[1]), c => c.charCodeAt(0))], { type: msg.fileType });
         const downloadUrl = URL.createObjectURL(blob);
-        li.innerHTML = <strong>${isYou ? "You" : msg.user}:</strong> <a href="${downloadUrl}" download><img src="${downloadUrl}" class="shared-img" /></a>;
+        li.innerHTML = `<strong>${isYou ? "You" : msg.user}:</strong> <a href="${downloadUrl}" download><img src="${downloadUrl}" class="shared-img" /></a>`;
       } else if (msg.fileType.startsWith("audio/")) {
         const audio = document.createElement("audio");
         audio.controls = true;
@@ -157,14 +155,13 @@ socket.on("messageHistory", (history) => {
           zip: "🗜", mp4: "🎥", mp3: "🎵", default: "📁"
         }[msg.fileName?.split('.').pop()?.toLowerCase()] || "📁";
 
-        li.innerHTML = <strong>${isYou ? "You" : msg.user}:</strong> <a href="${downloadUrl}" download class="file-link">${icon} ${msg.fileName}</a>;
+        li.innerHTML = `<strong>${isYou ? "You" : msg.user}:</strong> <a href="${downloadUrl}" download class="file-link">${icon} ${msg.fileName}</a>`;
       }
     } else {
-      // Normal text message
       li.classList.add(isYou ? "sender" : "receiver");
       li.innerHTML = isYou
-        ? <strong>You:</strong> ${msg.text} <span class="seen-check" id="seen-${msg.id}" data-status="sent">✔</span>
-        : <strong>${msg.user}:</strong> ${msg.text};
+        ? `<strong>You:</strong> ${msg.text} <span class="seen-check" id="seen-${msg.id}" data-status="sent">✔</span>`
+        : `<strong>${msg.user}:</strong> ${msg.text}`;
       if (!isYou) observer.observe(li);
     }
 
@@ -174,9 +171,8 @@ socket.on("messageHistory", (history) => {
   messages.scrollTop = messages.scrollHeight;
 });
 
-
 socket.on("messageSeen", (messageId) => {
-  const span = document.getElementById(seen-${messageId});
+  const span = document.getElementById(`seen-${messageId}`);
   if (span) {
     span.textContent = "✔✔";
     span.setAttribute("data-status", "seen");
@@ -188,7 +184,7 @@ socket.on("messageSeen", (messageId) => {
 socket.on("messageEdited", ({ messageId, newText }) => {
   const msgElem = document.getElementById(messageId);
   if (msgElem) {
-    msgElem.innerHTML = msgElem.innerHTML.replace(/>.*</, > ${newText} (edited) <);
+    msgElem.innerHTML = msgElem.innerHTML.replace(/>.*</, `> ${newText} (edited) <`);
   }
 });
 
@@ -266,23 +262,22 @@ socket.on("fileShared", ({ user, fileName, fileData, fileType }) => {
   let fileContent = "";
 
   if (fileType.startsWith("image/")) {
-    fileContent = <a href="${fileUrl}" download><img src="${fileUrl}" class="shared-img" /></a>;
+    fileContent = `<a href="${fileUrl}" download><img src="${fileUrl}" class="shared-img" /></a>`;
   } else if (fileType.startsWith("audio/")) {
-    fileContent = <audio controls src="${fileUrl}" style="margin-top:5px;"></audio>;
+    fileContent = `<audio controls src="${fileUrl}" style="margin-top:5px;"></audio>`;
   } else {
     const icon = {
       pdf: "📄", doc: "📝", docx: "📝", txt: "📃",
       jpg: "🖼", jpeg: "🖼", png: "🖼", gif: "🖼",
       zip: "🗜", mp4: "🎥", mp3: "🎵", default: "📁"
     }[fileExt] || "📁";
-    fileContent = <a href="${fileUrl}" download class="file-link">${icon} ${fileName}</a>;
+    fileContent = `<a href="${fileUrl}" download class="file-link">${icon} ${fileName}</a>`;
   }
 
-  li.innerHTML = <strong>${user === name ? "You" : user}:</strong> ${fileContent};
+  li.innerHTML = `<strong>${user === name ? "You" : user}:</strong> ${fileContent}`;
   messages.appendChild(li);
   messages.scrollTop = messages.scrollHeight;
 });
-
 
 socket.on("audioMessage", ({ user, fileData }) => {
   const li = document.createElement("li");
@@ -312,7 +307,7 @@ searchButton.addEventListener("click", () => {
       setTimeout(() => msg.classList.remove("search-highlight"), 5000);
     }
   });
-  if (!found) alert(❌ No message found containing: "${keyword}");
+  if (!found) alert(`❌ No message found containing: "${keyword}"`);
 });
 
 recordAudioBtn.addEventListener("click", async () => {
@@ -328,7 +323,7 @@ recordAudioBtn.addEventListener("click", async () => {
     reader.onloadend = () => {
       socket.emit("audioMessage", {
         fileData: reader.result,
-        fileName: voice_${Date.now()}.webm,
+        fileName: `voice_${Date.now()}.webm`,
         fileType: "audio/webm",
       });
     };
@@ -343,7 +338,7 @@ recordAudioBtn.addEventListener("click", async () => {
 
 // ✅ EMOJI PANEL LOGIC
 const emojiInput = document.getElementById("msg");
- const emojiList = [
+const emojiList = [
   "😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃","😉","😌","😍","😘","😗",
   "😙","😚","😋","😛","😜","🤪","😝","🤑","🤗","🤭","🤫","🤔","🤐","🤨","😐","😑","😶",
   "😏","😒","🙄","😬","🤥","😌","😔","😪","🤤","😴","😷","🤒","🤕","🤢","🤮","🤧","🥵",
@@ -351,7 +346,6 @@ const emojiInput = document.getElementById("msg");
   "🥺","😦","😧","😨","😰","😥","😢","😭","😱","😖","😣","😞","😓","😩","😫","🥱","😤",
   "😡","😠","🤬","😈","👿"
 ];
-
 
 function renderEmojiPanel() {
   emojiPanel.innerHTML = "";
