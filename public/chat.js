@@ -277,31 +277,33 @@ recordAudioBtn.addEventListener("click", async () => {
   }, 10000);
 });
 
-// ✅ Emoji Support Logic with Scrollbar Fix
+// ✅ EMOJI PANEL LOGIC
+const emojiBtn = document.getElementById("emoji-btn");
+const emojiPanel = document.getElementById("emoji-panel");
+const emojiInput = document.getElementById("msg");
+
 const emojiList = ["😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "😊", "😇", "🙂", "🙃", "😉"];
-emojiList.forEach(emoji => {
-  const btn = document.createElement("button");
-  btn.textContent = emoji;
-  btn.className = "emoji-btn";
-  btn.type = "button";
-  btn.addEventListener("click", () => {
-    input.value += emoji;
-    input.focus();
-    emojiPanel.style.display = "none";
+
+function renderEmojiPanel() {
+  emojiPanel.innerHTML = "";
+  emojiList.forEach((emoji) => {
+    const btn = document.createElement("button");
+    btn.textContent = emoji;
+    btn.className = "emoji-btn";
+    btn.type = "button";
+    btn.addEventListener("click", () => {
+      emojiInput.value += emoji;
+      emojiInput.focus();
+      emojiPanel.style.display = "none";
+    });
+    emojiPanel.appendChild(btn);
   });
-  emojiPanel.appendChild(btn);
-});
+}
 
 emojiBtn.addEventListener("click", (e) => {
   e.stopPropagation();
-  if (emojiPanel.style.display === "block") {
-    emojiPanel.style.display = "none";
-  } else {
-    const rect = emojiBtn.getBoundingClientRect();
-    emojiPanel.style.top = `${rect.top + window.scrollY - emojiPanel.offsetHeight}px`;
-    emojiPanel.style.left = `${rect.left + window.scrollX}px`;
-    emojiPanel.style.display = "block";
-  }
+  emojiPanel.style.display = emojiPanel.style.display === "block" ? "none" : "block";
+  emojiPanel.style.overflowY = "auto";
 });
 
 document.addEventListener("click", (e) => {
@@ -309,3 +311,5 @@ document.addEventListener("click", (e) => {
     emojiPanel.style.display = "none";
   }
 });
+
+renderEmojiPanel();
