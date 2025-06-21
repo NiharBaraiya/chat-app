@@ -1,4 +1,4 @@
-// ✅ Chat.js (Updated with All Features + Working Emoji Support)
+// ✅ Chat.js (Fully Updated with Working Emoji Panel + All Features)
 
 const socket = io();
 
@@ -22,6 +22,8 @@ const recordAudioBtn = document.getElementById("record-audio");
 const capturePhotoBtn = document.getElementById("capture-photo");
 const webcam = document.getElementById("webcam");
 const canvas = document.getElementById("snapshot");
+const emojiBtn = document.getElementById("emoji-btn");
+const emojiPanel = document.getElementById("emoji-panel");
 
 let mediaRecorder;
 let audioChunks = [];
@@ -275,7 +277,7 @@ recordAudioBtn.addEventListener("click", async () => {
   }, 10000);
 });
 
-capturePhotoBtn.addEventListener("click", async () => {
+capturePhotoBtn?.addEventListener("click", async () => {
   if (!navigator.mediaDevices) return alert("Camera not supported.");
   const stream = await navigator.mediaDevices.getUserMedia({ video: true });
   webcam.srcObject = stream;
@@ -297,21 +299,18 @@ capturePhotoBtn.addEventListener("click", async () => {
   }, 3000);
 });
 
+// ✅ Emoji Feature - Working
+const emojiList = ["😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "😊", "😇", "🙂", "🙃", "😉"];
 window.addEventListener("load", () => {
-  const emojiBtn = document.getElementById("emoji-btn");
-  const emojiPanel = document.getElementById("emoji-panel");
-  const emojiInput = document.getElementById("msg");
-
-  const emojiList = [ "😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "😊", "😇", "🙂", "🙃", "😉" ]; // and more...
-
+  emojiPanel.innerHTML = "";
   emojiList.forEach(emoji => {
     const btn = document.createElement("button");
     btn.textContent = emoji;
     btn.className = "emoji-btn";
     btn.type = "button";
     btn.addEventListener("click", () => {
-      emojiInput.value += emoji;
-      emojiInput.focus();
+      input.value += emoji;
+      input.focus();
       emojiPanel.style.display = "none";
     });
     emojiPanel.appendChild(btn);
