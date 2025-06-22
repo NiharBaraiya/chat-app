@@ -1,4 +1,4 @@
-// ✅ Updated Chat.js with search, emoji, edit, delete, pin, seen, text + emoji mix support
+// ✅ Fully Updated Chat.js with search, emoji, edit, delete, pin, seen, text + emoji mix support
 
 const socket = io();
 
@@ -21,6 +21,7 @@ const searchButton = document.getElementById("searchButton");
 const recordAudioBtn = document.getElementById("record-audio");
 const emojiBtn = document.getElementById("emoji-btn");
 const emojiPanel = document.getElementById("emoji-panel");
+const emojiBtnSearch = document.getElementById("emoji-btn-search");
 
 let mediaRecorder;
 let audioChunks = [];
@@ -49,10 +50,7 @@ function handleContextMenu(li, messageId, currentText, fileType) {
     if (fileType) {
       alert("Editing not supported for media messages");
     } else {
-      const newText = prompt("Edit your message:", currentText);
-      if (newText && newText !== currentText) {
-        socket.emit("editMessage", { messageId, newText });
-      }
+      showEditPrompt(messageId, currentText);
     }
   };
 
@@ -106,8 +104,7 @@ function renderMessage(msg, fromHistory = false) {
   const li = document.createElement("li");
   li.classList.add("chat-message");
   li.dataset.id = msg.id;
- li.dataset.text = msg.text || "";
-
+  li.dataset.text = msg.text || "";
   li.dataset.fileType = msg.fileType || "";
   li.id = msg.id;
 
@@ -191,6 +188,7 @@ socket.on("messageDeleted", (messageId) => {
   const msgElem = document.getElementById(messageId);
   if (msgElem) msgElem.remove();
 });
+
 socket.on("messagePinned", (msg) => {
   const originalMsg = document.getElementById(msg.id);
   if (originalMsg && !originalMsg.classList.contains("pinned-highlight")) {
@@ -216,6 +214,7 @@ socket.on("typing", (text) => {
 });
 
 clearButton.addEventListener("click", () => messages.innerHTML = "");
+
 socket.on("roomUsers", ({ users }) => {
   userList.innerHTML = "";
   users.forEach((user) => {
@@ -257,7 +256,7 @@ searchButton.addEventListener("click", () => {
   let found = false;
   allMessages.forEach(msg => {
     msg.classList.remove("search-highlight");
-   const rawText = (msg.dataset.text || msg.textContent).toLowerCase();
+    const rawText = (msg.dataset.text || msg.textContent).toLowerCase();
 
     if (!found && rawText.includes(keyword)) {
       msg.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -297,7 +296,7 @@ recordAudioBtn.addEventListener("click", async () => {
 
 // ✅ EMOJI PANEL LOGIC
 const emojiList = ["😀", "😂", "😎", "😍", "😭", "😡", "👍", "👎", "💯", "🔥"];
-function renderEmojiPanel() {
+function renderEmojiPanel(targetInput) {
   emojiPanel.innerHTML = "";
   emojiList.forEach((emoji) => {
     const btn = document.createElement("button");
@@ -305,8 +304,8 @@ function renderEmojiPanel() {
     btn.className = "emoji-btn";
     btn.type = "button";
     btn.addEventListener("click", () => {
-      input.value += emoji;
-      input.focus();
+      targetInput.value += emoji;
+      targetInput.focus();
       emojiPanel.style.display = "none";
     });
     emojiPanel.appendChild(btn);
@@ -314,11 +313,74 @@ function renderEmojiPanel() {
 }
 emojiBtn.addEventListener("click", (e) => {
   e.stopPropagation();
+  renderEmojiPanel(input);
   emojiPanel.style.display = emojiPanel.style.display === "block" ? "none" : "block";
 });
+if (emojiBtnSearch) {
+  emojiBtnSearch.addEventListener("click", (e) => {
+    e.stopPropagation();
+    renderEmojiPanel(searchInput);
+    emojiPanel.style.display = emojiPanel.style.display === "block" ? "none" : "block";
+  });
+}
 document.addEventListener("click", (e) => {
-  if (!emojiPanel.contains(e.target) && e.target !== emojiBtn) {
+  if (!emojiPanel.contains(e.target) && e.target !== emojiBtn && e.target !== emojiBtnSearch) {
     emojiPanel.style.display = "none";
   }
 });
-renderEmojiPanel();
+
+function showEditPrompt(messageId, currentText) {
+  const editContainer = document.createElement("div");
+  editContainer.className = "edit-container";
+  editContainer.innerHTML = `
+    <input type="text" id="editInput" value="${currentText}" />
+    <button id="saveEdit">Save</button>
+    <button id="cancelEdit">Cancel</button>
+    <div id="emoji-panel-edit" class="emoji-panel"></div>
+    <button id="emoji-btn-edit">😊</button>
+  `;
+  document.body.appendChild(editContainer);
+
+  const editInput = editContainer.querySelector("#editInput");
+  const saveBtn = editContainer.querySelector("#saveEdit");
+  const cancelBtn = editContainer.querySelector("#cancelEdit");
+  const emojiBtnEdit = editContainer.querySelector("#emoji-btn-edit");
+  const emojiPanelEdit = editContainer.querySelector("#emoji-panel-edit");
+
+  function renderEmojiEditPanel() {
+    emojiPanelEdit.innerHTML = "";
+    emojiList.forEach((emoji) => {
+      const btn = document.createElement("button");
+      btn.textContent = emoji;
+      btn.className = "emoji-btn";
+      btn.addEventListener("click", () => {
+        editInput.value += emoji;
+        editInput.focus();
+        emojiPanelEdit.style.display = "none";
+      });
+      emojiPanelEdit.appendChild(btn);
+    });
+  }
+
+  emojiBtnEdit.addEventListener("click", (e) => {
+    e.stopPropagation();
+    renderEmojiEditPanel();
+    emojiPanelEdit.style.display = emojiPanelEdit.style.display === "block" ? "none" : "block";
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!emojiPanelEdit.contains(e.target) && e.target !== emojiBtnEdit) {
+      emojiPanelEdit.style.display = "none";
+    }
+  });
+
+  saveBtn.onclick = () => {
+    const newText = editInput.value.trim();
+    if (newText && newText !== currentText) {
+      socket.emit("editMessage", { messageId, newText });
+    }
+    editContainer.remove();
+  };
+
+  cancelBtn.onclick = () => editContainer.remove();
+}
