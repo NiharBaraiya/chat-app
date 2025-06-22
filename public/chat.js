@@ -23,6 +23,7 @@ const emojiBtn = document.getElementById("emoji-btn");
 const emojiPanel = document.getElementById("emoji-panel");
 const emojiBtnSearch = document.getElementById("emoji-btn-search");
 
+
 let mediaRecorder;
 let audioChunks = [];
 let editingMessageId = null;
@@ -266,10 +267,13 @@ searchButton.addEventListener("click", () => {
 
   const allMessages = document.querySelectorAll("#messages .chat-message");
   let found = false;
+
   allMessages.forEach(msg => {
     msg.classList.remove("search-highlight");
+
     const rawText = (msg.dataset.text || msg.textContent).toLowerCase();
 
+    // ✅ Match emoji or text
     if (!found && rawText.includes(keyword)) {
       msg.scrollIntoView({ behavior: "smooth", block: "center" });
       msg.classList.add("search-highlight");
@@ -277,8 +281,10 @@ searchButton.addEventListener("click", () => {
       setTimeout(() => msg.classList.remove("search-highlight"), 5000);
     }
   });
+
   if (!found) alert(`❌ No message found containing: "${keyword}"`);
 });
+
 
 recordAudioBtn.addEventListener("click", async () => {
   if (!navigator.mediaDevices) return alert("Audio not supported.");
