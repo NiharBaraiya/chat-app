@@ -23,7 +23,6 @@ const emojiBtn = document.getElementById("emoji-btn");
 const emojiPanel = document.getElementById("emoji-panel");
 const emojiBtnSearch = document.getElementById("emoji-btn-search");
 
-
 let mediaRecorder;
 let audioChunks = [];
 let editingMessageId = null;
@@ -337,7 +336,7 @@ emojiBtn.addEventListener("click", (e) => {
 if (emojiBtnSearch) {
   emojiBtnSearch.addEventListener("click", (e) => {
     e.stopPropagation();
-    renderEmojiPanel(searchInput); // ✅ Very important: pass `searchInput` here
+    renderEmojiPanel(searchInput); // ✅ target is search input
     emojiPanel.style.display = emojiPanel.style.display === "block" ? "none" : "block";
   });
 }
