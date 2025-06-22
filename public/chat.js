@@ -337,7 +337,7 @@ emojiBtn.addEventListener("click", (e) => {
 if (emojiBtnSearch) {
   emojiBtnSearch.addEventListener("click", (e) => {
     e.stopPropagation();
-    renderEmojiPanel(searchInput);
+    renderEmojiPanel(searchInput); // ✅ Very important: pass `searchInput` here
     emojiPanel.style.display = emojiPanel.style.display === "block" ? "none" : "block";
   });
 }
