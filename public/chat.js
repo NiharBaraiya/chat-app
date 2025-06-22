@@ -106,7 +106,8 @@ function renderMessage(msg, fromHistory = false) {
   const li = document.createElement("li");
   li.classList.add("chat-message");
   li.dataset.id = msg.id;
-  li.dataset.text = msg.text || "";
+ li.dataset.text = msg.text || "";
+
   li.dataset.fileType = msg.fileType || "";
   li.id = msg.id;
 
@@ -256,7 +257,7 @@ searchButton.addEventListener("click", () => {
   let found = false;
   allMessages.forEach(msg => {
     msg.classList.remove("search-highlight");
-    const rawText = (msg.dataset.text || msg.textContent).toLowerCase();
+   const rawText = (msg.dataset.text || msg.textContent).toLowerCase();
 
     if (!found && rawText.includes(keyword)) {
       msg.scrollIntoView({ behavior: "smooth", block: "center" });
