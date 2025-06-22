@@ -25,6 +25,7 @@ const emojiBtnSearch = document.getElementById("emoji-btn-search");
 
 let mediaRecorder;
 let audioChunks = [];
+let editingMessageId = null;
 
 if (name && room) {
   socket.emit("joinRoom", { name, room });
@@ -47,12 +48,15 @@ function handleContextMenu(li, messageId, currentText, fileType) {
   document.addEventListener("click", removeMenu, { once: true });
 
   menu.querySelector(".edit-btn").onclick = () => {
-    if (fileType) {
-      alert("Editing not supported for media messages");
-    } else {
-      showEditPrompt(messageId, currentText);
-    }
-  };
+  if (fileType) {
+    alert("Editing not supported for media messages");
+  } else {
+    input.value = currentText;
+    editingMessageId = messageId;
+    input.focus();
+  }
+};
+
 
   menu.querySelector(".delete-btn").onclick = () => {
     if (confirm("Are you sure you want to delete this message?")) {
@@ -67,13 +71,21 @@ function handleContextMenu(li, messageId, currentText, fileType) {
 
 form.addEventListener("submit", (e) => {
   e.preventDefault();
-  if (input.value.trim()) {
+  const msgText = input.value.trim();
+  if (!msgText) return;
+
+  if (editingMessageId) {
+    socket.emit("editMessage", { messageId: editingMessageId, newText: msgText });
+    editingMessageId = null;
+  } else {
     const messageId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    socket.emit("chatMessage", { text: input.value, id: messageId });
-    input.value = "";
-    input.focus();
+    socket.emit("chatMessage", { text: msgText, id: messageId });
   }
+
+  input.value = "";
+  input.focus();
 });
+
 
 messages.addEventListener("contextmenu", (e) => {
   e.preventDefault();
