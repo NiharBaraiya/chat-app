@@ -106,7 +106,7 @@ function renderMessage(msg, fromHistory = false) {
   const li = document.createElement("li");
   li.classList.add("chat-message");
   li.dataset.id = msg.id;
-  li.dataset.text = (msg.text || "").toLowerCase();
+  li.dataset.text = msg.text || "";
   li.dataset.fileType = msg.fileType || "";
   li.id = msg.id;
 
@@ -176,13 +176,16 @@ socket.on("messageSeen", (messageId) => {
 });
 socket.on("messageEdited", ({ messageId, newText }) => {
   const msgElem = document.getElementById(messageId);
-  if (msgElem) {
-    const strong = msgElem.querySelector("strong");
-    if (strong) {
-      msgElem.innerHTML = `${strong.outerHTML} ${newText} <span class='edited'>(edited)</span>`;
-    }
-  }
+  if (!msgElem) return;
+
+  const isYou = msgElem.classList.contains("sender");
+  msgElem.innerHTML = isYou
+    ? `<strong>You:</strong> ${newText} <span class="seen-check" id="seen-${messageId}" data-status="sent">✔</span> <em>(edited)</em>`
+    : `<strong>${msgElem.querySelector("strong")?.innerText?.replace(':', '')}:</strong> ${newText} <em>(edited)</em>`;
+
+  msgElem.dataset.text = newText.toLowerCase();
 });
+
 socket.on("messageDeleted", (messageId) => {
   const msgElem = document.getElementById(messageId);
   if (msgElem) msgElem.remove();
@@ -253,7 +256,8 @@ searchButton.addEventListener("click", () => {
   let found = false;
   allMessages.forEach(msg => {
     msg.classList.remove("search-highlight");
-    const rawText = msg.dataset.text || msg.textContent.toLowerCase();
+    const rawText = (msg.dataset.text || msg.textContent).toLowerCase();
+
     if (!found && rawText.includes(keyword)) {
       msg.scrollIntoView({ behavior: "smooth", block: "center" });
       msg.classList.add("search-highlight");
