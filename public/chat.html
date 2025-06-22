@@ -19,13 +19,15 @@
     <div class="chat-main">
       <h2 id="room-name">Room Chat</h2>
 
+      <!-- ✅ Search Bar -->
+      <div style="margin: 10px 0; display: flex; gap: 5px; align-items: center;">
+        <input id="searchInput" type="text" placeholder="🔍 Search messages..." style="padding: 5px; width: 200px;" />
+        <button id="emoji-btn-search" type="button">😊</button>
+        <button id="searchButton" type="button">Search</button>
+      </div>
+
       <!-- ✅ Messages -->
-      <ul id="messages">
-        <div style="margin: 10px 0;">
-          <input id="searchInput" type="text" placeholder="🔍 Search messages..." style="padding: 5px; width: 200px;" />
-          <button id="searchButton" type="button">Search</button>
-        </div>
-      </ul>
+      <ul id="messages"></ul>
       <p id="typing"></p>
 
       <!-- ✅ Chat Form -->
@@ -37,15 +39,14 @@
             <input id="msg" type="text" placeholder="Your message..." autocomplete="off" required />
           </div>
 
-         <!-- ✅ Emoji Button & Panel -->
-<div style="position: relative;">
-  <button id="emoji-btn" type="button">😊</button>
-  <div id="emoji-panel"
-    style="display: none; position: absolute; bottom: 40px; background: #fff; border: 1px solid #ccc; padding: 5px; border-radius: 5px; max-height: 150px; overflow-y: auto; z-index: 999; width: 250px;">
-    <!-- Dynamically populated by chat.js -->
-  </div>
-</div>
-
+          <!-- ✅ Emoji Panel Shared -->
+          <div style="position: relative;">
+            <button id="emoji-btn" type="button">😊</button>
+            <div id="emoji-panel"
+              style="display: none; position: absolute; bottom: 40px; background: #fff; border: 1px solid #ccc; padding: 5px; border-radius: 5px; max-height: 150px; overflow-y: auto; z-index: 999; width: 250px;">
+              <!-- Dynamically populated by chat.js -->
+            </div>
+          </div>
 
           <!-- ✅ File Upload -->
           <label class="file-upload" title="Upload File">
