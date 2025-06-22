@@ -47,7 +47,15 @@ function handleContextMenu(li, messageId, currentText, fileType) {
   document.addEventListener("click", removeMenu, { once: true });
 
   menu.querySelector(".edit-btn").onclick = () => {
-    if (fileType) return alert("Editing not supported for media messages");
+   if (fileType) {
+  alert("Editing not supported for media messages");
+} else {
+  const newText = prompt("Edit your message:", currentText);
+  if (newText && newText !== currentText) {
+    socket.emit("editMessage", { messageId, newText });
+  }
+}
+
     const newText = prompt("Edit your message:", currentText);
     if (newText && newText !== currentText) {
       socket.emit("editMessage", { messageId, newText });
@@ -120,15 +128,26 @@ function renderMessage(msg, fromHistory = false) {
     const blob = new Blob([Uint8Array.from(atob(msg.fileData.split(',')[1]), c => c.charCodeAt(0))], { type: msg.fileType });
     const downloadUrl = URL.createObjectURL(blob);
 
-    if (msg.fileType.startsWith("image/")) {
-      li.innerHTML = `<strong>${isYou ? "You" : msg.user}:</strong> <a href="${downloadUrl}" download><img src="${downloadUrl}" class="shared-img" /></a>`;
-    } else if (msg.fileType.startsWith("audio/")) {
-      const audio = document.createElement("audio");
-      audio.controls = true;
-      audio.src = msg.fileData;
-      li.innerHTML = `<strong>${isYou ? "You" : msg.user}:</strong> `;
-      li.appendChild(audio);
-    } else {
+ if (msg.fileType.startsWith("image/")) {
+  li.innerHTML = `<strong>${isYou ? "You" : msg.user}:</strong> 
+    <a href="${downloadUrl}" download><img src="${downloadUrl}" class="shared-img" /></a>` +
+    (isYou ? ` <span class="seen-check" id="seen-${msg.id}" data-status="sent">✔</span>` : "");
+} else if (msg.fileType.startsWith("audio/")) {
+  const audio = document.createElement("audio");
+  audio.controls = true;
+  audio.src = msg.fileData;
+  li.innerHTML = `<strong>${isYou ? "You" : msg.user}:</strong> `;
+  li.appendChild(audio);
+  if (isYou) {
+    const span = document.createElement("span");
+    span.className = "seen-check";
+    span.id = `seen-${msg.id}`;
+    span.setAttribute("data-status", "sent");
+    span.textContent = "✔";
+    li.appendChild(span);
+  }
+}
+else {
       const icon = {
         pdf: "📄", doc: "📝", docx: "📝", txt: "📃",
         jpg: "🖼", jpeg: "🖼", png: "🖼", gif: "🖼",
