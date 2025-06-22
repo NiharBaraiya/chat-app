@@ -98,44 +98,46 @@ io.on("connection", (socket) => {
       socket.to(user.room).emit("typing", typingText);
     }
   });
-
-  socket.on("fileUpload", ({ fileName, fileData, fileType }) => {
-    const user = users[socket.id];
-    if (user) {
-      const time = getCurrentTime();
-      const fileMsg = {
-        user: user.name,
-        fileName,
-        fileData,
-        fileType,
-        time,
-      };
-
-      // Save file message
-      if (!roomMessages[user.room]) roomMessages[user.room] = [];
-      roomMessages[user.room].push(fileMsg);
-
-      io.to(user.room).emit("fileShared", fileMsg);
-    }
-  });
-
-  socket.on("audioMessage", (audio) => {
-    const user = users[socket.id];
-    if (!user) return;
-
-    const audioMsg = {
+socket.on("fileUpload", ({ fileName, fileData, fileType }) => {
+  const user = users[socket.id];
+  if (user) {
+    const time = getCurrentTime();
+    const fileMsg = {
+      id: crypto.randomUUID(), // ✅ Add this
       user: user.name,
-      fileName: audio.fileName,
-      fileData: audio.fileData,
-      fileType: audio.fileType,
-      time: getCurrentTime(),
+      fileName,
+      fileData,
+      fileType,
+      time,
     };
 
+    messages[fileMsg.id] = fileMsg; // ✅ Add this
     if (!roomMessages[user.room]) roomMessages[user.room] = [];
-    roomMessages[user.room].push(audioMsg);
+    roomMessages[user.room].push(fileMsg);
 
-    io.to(user.room).emit("fileShared", audioMsg);
-  });
+    io.to(user.room).emit("fileShared", fileMsg);
+  }
+});
+
+socket.on("audioMessage", (audio) => {
+  const user = users[socket.id];
+  if (!user) return;
+
+  const audioMsg = {
+    id: crypto.randomUUID(), // ✅ Add this
+    user: user.name,
+    fileName: audio.fileName,
+    fileData: audio.fileData,
+    fileType: audio.fileType,
+    time: getCurrentTime(),
+  };
+
+  messages[audioMsg.id] = audioMsg; // ✅ Add this
+  if (!roomMessages[user.room]) roomMessages[user.room] = [];
+  roomMessages[user.room].push(audioMsg);
+
+  io.to(user.room).emit("fileShared", audioMsg);
+});
 
   socket.on("addReaction", ({ messageId, emoji }) => {
     const user = users[socket.id];
