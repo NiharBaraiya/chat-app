@@ -1,3 +1,5 @@
+// ✅ Updated Chat.js with search, emoji, edit, delete, pin, seen, text + emoji mix support
+
 const socket = io();
 
 const urlParams = new URLSearchParams(window.location.search);
@@ -17,9 +19,6 @@ const pinnedContainer = document.getElementById("pinned-messages");
 const searchInput = document.getElementById("searchInput");
 const searchButton = document.getElementById("searchButton");
 const recordAudioBtn = document.getElementById("record-audio");
-const capturePhotoBtn = document.getElementById("capture-photo");
-const webcam = document.getElementById("webcam");
-const canvas = document.getElementById("snapshot");
 const emojiBtn = document.getElementById("emoji-btn");
 const emojiPanel = document.getElementById("emoji-panel");
 
@@ -47,18 +46,13 @@ function handleContextMenu(li, messageId, currentText, fileType) {
   document.addEventListener("click", removeMenu, { once: true });
 
   menu.querySelector(".edit-btn").onclick = () => {
-   if (fileType) {
-  alert("Editing not supported for media messages");
-} else {
-  const newText = prompt("Edit your message:", currentText);
-  if (newText && newText !== currentText) {
-    socket.emit("editMessage", { messageId, newText });
-  }
-}
-
-    const newText = prompt("Edit your message:", currentText);
-    if (newText && newText !== currentText) {
-      socket.emit("editMessage", { messageId, newText });
+    if (fileType) {
+      alert("Editing not supported for media messages");
+    } else {
+      const newText = prompt("Edit your message:", currentText);
+      if (newText && newText !== currentText) {
+        socket.emit("editMessage", { messageId, newText });
+      }
     }
   };
 
@@ -128,26 +122,25 @@ function renderMessage(msg, fromHistory = false) {
     const blob = new Blob([Uint8Array.from(atob(msg.fileData.split(',')[1]), c => c.charCodeAt(0))], { type: msg.fileType });
     const downloadUrl = URL.createObjectURL(blob);
 
- if (msg.fileType.startsWith("image/")) {
-  li.innerHTML = `<strong>${isYou ? "You" : msg.user}:</strong> 
-    <a href="${downloadUrl}" download><img src="${downloadUrl}" class="shared-img" /></a>` +
-    (isYou ? ` <span class="seen-check" id="seen-${msg.id}" data-status="sent">✔</span>` : "");
-} else if (msg.fileType.startsWith("audio/")) {
-  const audio = document.createElement("audio");
-  audio.controls = true;
-  audio.src = msg.fileData;
-  li.innerHTML = `<strong>${isYou ? "You" : msg.user}:</strong> `;
-  li.appendChild(audio);
-  if (isYou) {
-    const span = document.createElement("span");
-    span.className = "seen-check";
-    span.id = `seen-${msg.id}`;
-    span.setAttribute("data-status", "sent");
-    span.textContent = "✔";
-    li.appendChild(span);
-  }
-}
-else {
+    if (msg.fileType.startsWith("image/")) {
+      li.innerHTML = `<strong>${isYou ? "You" : msg.user}:</strong>
+        <a href="${downloadUrl}" download><img src="${downloadUrl}" class="shared-img" /></a>` +
+        (isYou ? ` <span class="seen-check" id="seen-${msg.id}" data-status="sent">✔</span>` : "");
+    } else if (msg.fileType.startsWith("audio/")) {
+      const audio = document.createElement("audio");
+      audio.controls = true;
+      audio.src = msg.fileData;
+      li.innerHTML = `<strong>${isYou ? "You" : msg.user}:</strong> `;
+      li.appendChild(audio);
+      if (isYou) {
+        const span = document.createElement("span");
+        span.className = "seen-check";
+        span.id = `seen-${msg.id}`;
+        span.setAttribute("data-status", "sent");
+        span.textContent = "✔";
+        li.appendChild(span);
+      }
+    } else {
       const icon = {
         pdf: "📄", doc: "📝", docx: "📝", txt: "📃",
         jpg: "🖼", jpeg: "🖼", png: "🖼", gif: "🖼",
@@ -168,12 +161,10 @@ else {
 }
 
 socket.on("message", (msg) => renderMessage(msg));
-
 socket.on("messageHistory", (history) => {
   history.forEach((msg) => renderMessage(msg, true));
   messages.scrollTop = messages.scrollHeight;
 });
-
 socket.on("messageSeen", (messageId) => {
   const span = document.getElementById(`seen-${messageId}`);
   if (span) {
@@ -183,19 +174,19 @@ socket.on("messageSeen", (messageId) => {
     span.title = "Seen";
   }
 });
-
 socket.on("messageEdited", ({ messageId, newText }) => {
   const msgElem = document.getElementById(messageId);
   if (msgElem) {
-    msgElem.innerHTML = msgElem.innerHTML.replace(/>.*</, `> ${newText} (edited) <`);
+    const strong = msgElem.querySelector("strong");
+    if (strong) {
+      msgElem.innerHTML = `${strong.outerHTML} ${newText} <span class='edited'>(edited)</span>`;
+    }
   }
 });
-
 socket.on("messageDeleted", (messageId) => {
   const msgElem = document.getElementById(messageId);
   if (msgElem) msgElem.remove();
 });
-
 socket.on("messagePinned", (msg) => {
   const originalMsg = document.getElementById(msg.id);
   if (originalMsg && !originalMsg.classList.contains("pinned-highlight")) {
@@ -220,10 +211,7 @@ socket.on("typing", (text) => {
   typing.innerText = text || "";
 });
 
-clearButton.addEventListener("click", () => {
-  messages.innerHTML = "";
-});
-
+clearButton.addEventListener("click", () => messages.innerHTML = "");
 socket.on("roomUsers", ({ users }) => {
   userList.innerHTML = "";
   users.forEach((user) => {
@@ -255,7 +243,6 @@ fileInput?.addEventListener("change", () => {
 });
 
 socket.on("fileShared", (msg) => renderMessage(msg));
-
 socket.on("audioMessage", (msg) => renderMessage(msg));
 
 searchButton.addEventListener("click", () => {
@@ -304,16 +291,7 @@ recordAudioBtn.addEventListener("click", async () => {
 });
 
 // ✅ EMOJI PANEL LOGIC
-const emojiInput = document.getElementById("msg");
-const emojiList = [
-  "😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃","😉","😌","😍","😘","😗",
-  "😙","😚","😋","😛","😜","🤪","😝","🤑","🤗","🤭","🤫","🤔","🤐","🤨","😐","😑","😶",
-  "😏","😒","🙄","😬","🤥","😌","😔","😪","🤤","😴","😷","🤒","🤕","🤢","🤮","🤧","🥵",
-  "🥶","🥴","😵","🤯","🤠","🥳","😎","🤓","🧐","😕","😟","🙁","☹","😮","😯","😲","😳",
-  "🥺","😦","😧","😨","😰","😥","😢","😭","😱","😖","😣","😞","😓","😩","😫","🥱","😤",
-  "😡","😠","🤬","😈","👿"
-];
-
+const emojiList = ["😀", "😂", "😎", "😍", "😭", "😡", "👍", "👎", "💯", "🔥"];
 function renderEmojiPanel() {
   emojiPanel.innerHTML = "";
   emojiList.forEach((emoji) => {
@@ -322,24 +300,20 @@ function renderEmojiPanel() {
     btn.className = "emoji-btn";
     btn.type = "button";
     btn.addEventListener("click", () => {
-      emojiInput.value += emoji;
-      emojiInput.focus();
+      input.value += emoji;
+      input.focus();
       emojiPanel.style.display = "none";
     });
     emojiPanel.appendChild(btn);
   });
 }
-
 emojiBtn.addEventListener("click", (e) => {
   e.stopPropagation();
   emojiPanel.style.display = emojiPanel.style.display === "block" ? "none" : "block";
-  emojiPanel.style.overflowY = "auto";
 });
-
 document.addEventListener("click", (e) => {
   if (!emojiPanel.contains(e.target) && e.target !== emojiBtn) {
     emojiPanel.style.display = "none";
   }
 });
-
 renderEmojiPanel();
