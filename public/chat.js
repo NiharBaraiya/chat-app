@@ -31,25 +31,7 @@ if (name && room) {
   roomNameElem.innerText = `${room} Room`;
 }
 
-form.addEventListener("submit", (e) => {
-  e.preventDefault();
-  if (input.value.trim()) {
-    const messageId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    socket.emit("chatMessage", { text: input.value, id: messageId });
-    input.value = "";
-    input.focus();
-  }
-});
-
-messages.addEventListener("contextmenu", (e) => {
-  e.preventDefault();
-  const li = e.target.closest("li.chat-message.sender");
-  if (!li) return;
-
-  const messageId = li.dataset.id;
-  const currentText = li.dataset.text;
-  if (!messageId) return;
-
+function handleContextMenu(li, messageId, currentText, fileType) {
   const menu = document.createElement("div");
   menu.className = "context-menu";
   menu.innerHTML = `
@@ -58,13 +40,14 @@ messages.addEventListener("contextmenu", (e) => {
     <button class="pin-btn">📌 Pin</button>
   `;
   document.body.appendChild(menu);
-  menu.style.top = `${e.pageY}px`;
-  menu.style.left = `${e.pageX}px`;
+  menu.style.top = `${event.pageY}px`;
+  menu.style.left = `${event.pageX}px`;
 
   const removeMenu = () => menu.remove();
   document.addEventListener("click", removeMenu, { once: true });
 
   menu.querySelector(".edit-btn").onclick = () => {
+    if (fileType) return alert("Editing not supported for media messages");
     const newText = prompt("Edit your message:", currentText);
     if (newText && newText !== currentText) {
       socket.emit("editMessage", { messageId, newText });
@@ -80,6 +63,27 @@ messages.addEventListener("contextmenu", (e) => {
   menu.querySelector(".pin-btn").onclick = () => {
     socket.emit("pinMessage", messageId);
   };
+}
+
+form.addEventListener("submit", (e) => {
+  e.preventDefault();
+  if (input.value.trim()) {
+    const messageId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    socket.emit("chatMessage", { text: input.value, id: messageId });
+    input.value = "";
+    input.focus();
+  }
+});
+
+messages.addEventListener("contextmenu", (e) => {
+  e.preventDefault();
+  const li = e.target.closest("li.chat-message.sender");
+  if (!li) return;
+  const messageId = li.dataset.id;
+  const currentText = li.dataset.text;
+  const fileType = li.dataset.fileType;
+  if (!messageId) return;
+  handleContextMenu(li, messageId, currentText, fileType);
 });
 
 const observer = new IntersectionObserver((entries) => {
@@ -96,78 +100,58 @@ const observer = new IntersectionObserver((entries) => {
   });
 }, { threshold: 1.0 });
 
-socket.on("message", (message) => {
+function renderMessage(msg, fromHistory = false) {
   const li = document.createElement("li");
   li.classList.add("chat-message");
-  li.dataset.id = message.id;
-  li.dataset.text = message.text.toLowerCase();
-  li.id = message.id;
+  li.dataset.id = msg.id;
+  li.dataset.text = (msg.text || "").toLowerCase();
+  li.dataset.fileType = msg.fileType || "";
+  li.id = msg.id;
 
-  if (message.user === "System") {
+  const isYou = msg.user === name;
+  const isSystem = msg.user === "System";
+
+  if (isSystem) {
     li.classList.add("system-msg");
-    li.innerText = message.text;
-  } else if (message.user === name) {
-    li.classList.add("sender");
-    li.innerHTML = `<strong>You:</strong> ${message.text} <span class="seen-check" id="seen-${message.id}" data-status="sent">✔</span>`;
+    li.innerText = msg.text;
+  } else if (msg.fileType) {
+    li.classList.add(isYou ? "sender" : "receiver");
+    const fileExt = msg.fileName?.split('.').pop()?.toLowerCase();
+    const blob = new Blob([Uint8Array.from(atob(msg.fileData.split(',')[1]), c => c.charCodeAt(0))], { type: msg.fileType });
+    const downloadUrl = URL.createObjectURL(blob);
+
+    if (msg.fileType.startsWith("image/")) {
+      li.innerHTML = `<strong>${isYou ? "You" : msg.user}:</strong> <a href="${downloadUrl}" download><img src="${downloadUrl}" class="shared-img" /></a>`;
+    } else if (msg.fileType.startsWith("audio/")) {
+      const audio = document.createElement("audio");
+      audio.controls = true;
+      audio.src = msg.fileData;
+      li.innerHTML = `<strong>${isYou ? "You" : msg.user}:</strong> `;
+      li.appendChild(audio);
+    } else {
+      const icon = {
+        pdf: "📄", doc: "📝", docx: "📝", txt: "📃",
+        jpg: "🖼", jpeg: "🖼", png: "🖼", gif: "🖼",
+        zip: "🗜", mp4: "🎥", mp3: "🎵", default: "📁"
+      }[fileExt] || "📁";
+      li.innerHTML = `<strong>${isYou ? "You" : msg.user}:</strong> <a href="${downloadUrl}" download class="file-link">${icon} ${msg.fileName}</a>`;
+    }
   } else {
-    li.classList.add("receiver");
-    li.innerHTML = `<strong>${message.user}:</strong> ${message.text}`;
-    observer.observe(li);
+    li.classList.add(isYou ? "sender" : "receiver");
+    li.innerHTML = isYou
+      ? `<strong>You:</strong> ${msg.text} <span class="seen-check" id="seen-${msg.id}" data-status="sent">✔</span>`
+      : `<strong>${msg.user}:</strong> ${msg.text}`;
   }
 
   messages.appendChild(li);
-  messages.scrollTop = messages.scrollHeight;
-});
+  if (!isYou && !isSystem) observer.observe(li);
+  if (!fromHistory) messages.scrollTop = messages.scrollHeight;
+}
+
+socket.on("message", (msg) => renderMessage(msg));
 
 socket.on("messageHistory", (history) => {
-  history.forEach((msg) => {
-    const li = document.createElement("li");
-    li.classList.add("chat-message");
-    li.dataset.id = msg.id;
-    li.dataset.text = (msg.text || "").toLowerCase();
-    li.id = msg.id;
-
-    const isYou = msg.user === name;
-    const isSystem = msg.user === "System";
-
-    if (isSystem) {
-      li.classList.add("system-msg");
-      li.innerText = msg.text;
-    } else if (msg.fileType) {
-      li.classList.add(isYou ? "sender" : "receiver");
-
-      if (msg.fileType.startsWith("image/")) {
-        const blob = new Blob([Uint8Array.from(atob(msg.fileData.split(',')[1]), c => c.charCodeAt(0))], { type: msg.fileType });
-        const downloadUrl = URL.createObjectURL(blob);
-        li.innerHTML = `<strong>${isYou ? "You" : msg.user}:</strong> <a href="${downloadUrl}" download><img src="${downloadUrl}" class="shared-img" /></a>`;
-      } else if (msg.fileType.startsWith("audio/")) {
-        const audio = document.createElement("audio");
-        audio.controls = true;
-        audio.src = msg.fileData;
-        li.innerHTML = `<strong>${isYou ? "You" : msg.user}:</strong> `;
-        li.appendChild(audio);
-      } else {
-        const blob = new Blob([Uint8Array.from(atob(msg.fileData.split(',')[1]), c => c.charCodeAt(0))], { type: msg.fileType });
-        const downloadUrl = URL.createObjectURL(blob);
-        const icon = {
-          pdf: "📄", doc: "📝", docx: "📝", txt: "📃",
-          jpg: "🖼", jpeg: "🖼", png: "🖼", gif: "🖼",
-          zip: "🗜", mp4: "🎥", mp3: "🎵", default: "📁"
-        }[msg.fileName?.split('.').pop()?.toLowerCase()] || "📁";
-
-        li.innerHTML = `<strong>${isYou ? "You" : msg.user}:</strong> <a href="${downloadUrl}" download class="file-link">${icon} ${msg.fileName}</a>`;
-      }
-    } else {
-      li.classList.add(isYou ? "sender" : "receiver");
-      li.innerHTML = isYou
-        ? `<strong>You:</strong> ${msg.text} <span class="seen-check" id="seen-${msg.id}" data-status="sent">✔</span>`
-        : `<strong>${msg.user}:</strong> ${msg.text}`;
-      if (!isYou) observer.observe(li);
-    }
-
-    messages.appendChild(li);
-  });
-
+  history.forEach((msg) => renderMessage(msg, true));
   messages.scrollTop = messages.scrollHeight;
 });
 
@@ -251,45 +235,9 @@ fileInput?.addEventListener("change", () => {
   reader.readAsDataURL(file);
 });
 
-socket.on("fileShared", ({ user, fileName, fileData, fileType }) => {
-  const li = document.createElement("li");
-  li.classList.add("chat-message", user === name ? "sender" : "receiver");
+socket.on("fileShared", (msg) => renderMessage(msg));
 
-  const fileExt = fileName.split('.').pop().toLowerCase();
-  const blob = new Blob([Uint8Array.from(atob(fileData.split(',')[1]), c => c.charCodeAt(0))], { type: fileType });
-  const fileUrl = URL.createObjectURL(blob);
-
-  let fileContent = "";
-
-  if (fileType.startsWith("image/")) {
-    fileContent = `<a href="${fileUrl}" download><img src="${fileUrl}" class="shared-img" /></a>`;
-  } else if (fileType.startsWith("audio/")) {
-    fileContent = `<audio controls src="${fileUrl}" style="margin-top:5px;"></audio>`;
-  } else {
-    const icon = {
-      pdf: "📄", doc: "📝", docx: "📝", txt: "📃",
-      jpg: "🖼", jpeg: "🖼", png: "🖼", gif: "🖼",
-      zip: "🗜", mp4: "🎥", mp3: "🎵", default: "📁"
-    }[fileExt] || "📁";
-    fileContent = `<a href="${fileUrl}" download class="file-link">${icon} ${fileName}</a>`;
-  }
-
-  li.innerHTML = `<strong>${user === name ? "You" : user}:</strong> ${fileContent}`;
-  messages.appendChild(li);
-  messages.scrollTop = messages.scrollHeight;
-});
-
-socket.on("audioMessage", ({ user, fileData }) => {
-  const li = document.createElement("li");
-  li.classList.add("chat-message", user === name ? "sender" : "receiver");
-  const audio = document.createElement("audio");
-  audio.controls = true;
-  audio.src = fileData;
-  li.innerHTML = `<strong>${user === name ? "You" : user}:</strong> `;
-  li.appendChild(audio);
-  messages.appendChild(li);
-  messages.scrollTop = messages.scrollHeight;
-});
+socket.on("audioMessage", (msg) => renderMessage(msg));
 
 searchButton.addEventListener("click", () => {
   const keyword = searchInput.value.trim().toLowerCase();
