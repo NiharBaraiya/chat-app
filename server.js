@@ -1,14 +1,17 @@
+// Import required modules
 const express = require("express");
 const path = require("path");
 const app = express();
 const http = require("http").createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(http);
-const crypto = require("crypto");
+const crypto = require("crypto"); // For generating unique IDs
 const PORT = process.env.PORT || 3000;
 
+// Serve static files from 'public' folder
 app.use(express.static(path.join(__dirname, "public"), { index: false }));
 
+// Handle root request depending on host
 app.get("/", (req, res) => {
   const host = req.headers.host;
   if (host.includes("localhost")) {
@@ -18,6 +21,7 @@ app.get("/", (req, res) => {
   }
 });
 
+// Direct routes for specific HTML pages
 app.get("/simple", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "simple.html"));
 });
@@ -26,19 +30,22 @@ app.get("/index", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-const users = {};
-const roomUsers = {};
-const messages = {}; // All messages by ID
-const roomMessages = {}; // New: Messages by room
+// In-memory data stores
+const users = {};            // socket.id => user info
+const roomUsers = {};        // room => Set of usernames
+const messages = {};         // message.id => message object
+const roomMessages = {};     // room => list of messages
 
+// WebSocket connection handler
 io.on("connection", (socket) => {
+  // When user joins a room
   socket.on("joinRoom", ({ name, room }) => {
     const currentUser = { name, room };
     users[socket.id] = currentUser;
     socket.join(room);
 
+    // Track users in the room
     if (!roomUsers[room]) roomUsers[room] = new Set();
-
     const existing = [...roomUsers[room]];
     if (existing.length > 0) {
       socket.emit("message", formatMessage("System", `${existing.join(", ")} already joined this chat.`));
@@ -46,20 +53,22 @@ io.on("connection", (socket) => {
 
     roomUsers[room].add(name);
 
-    // Welcome + notify others
+    // Send welcome message and notify others
     socket.emit("message", formatMessage("System", `Welcome ${name}!`));
     socket.broadcast.to(room).emit("message", formatMessage("System", `${name} joined the chat.`));
 
-    // Send previous chat history
+    // Send previous messages to new user
     const history = roomMessages[room] || [];
     socket.emit("messageHistory", history);
 
+    // Send updated user list to room
     io.to(room).emit("roomUsers", {
       room,
       users: [...roomUsers[room]].map(name => ({ name })),
     });
   });
 
+  // When user sends a message
   socket.on("chatMessage", ({ text, id }) => {
     const user = users[socket.id];
     if (user) {
@@ -72,7 +81,6 @@ io.on("connection", (socket) => {
 
       messages[message.id] = message;
 
-      // Save in roomMessages
       if (!roomMessages[user.room]) roomMessages[user.room] = [];
       roomMessages[user.room].push(message);
 
@@ -80,17 +88,21 @@ io.on("connection", (socket) => {
     }
   });
 
+  // Message seen event
   socket.on("seenMessage", (messageId) => {
     const user = users[socket.id];
     const msg = messages[messageId];
     if (user && msg) {
-      const senderSocketId = Object.keys(users).find(id => users[id].name === msg.user && users[id].room === user.room);
+      const senderSocketId = Object.keys(users).find(
+        id => users[id].name === msg.user && users[id].room === user.room
+      );
       if (senderSocketId) {
         io.to(senderSocketId).emit("messageSeen", messageId);
       }
     }
   });
 
+  // Typing indicator
   socket.on("typing", (status) => {
     const user = users[socket.id];
     if (user) {
@@ -98,47 +110,51 @@ io.on("connection", (socket) => {
       socket.to(user.room).emit("typing", typingText);
     }
   });
-socket.on("fileUpload", ({ fileName, fileData, fileType }) => {
-  const user = users[socket.id];
-  if (user) {
-    const time = getCurrentTime();
-    const fileMsg = {
-      id: crypto.randomUUID(), // ✅ Add this
+
+  // File upload handler
+  socket.on("fileUpload", ({ fileName, fileData, fileType }) => {
+    const user = users[socket.id];
+    if (user) {
+      const time = getCurrentTime();
+      const fileMsg = {
+        id: crypto.randomUUID(),
+        user: user.name,
+        fileName,
+        fileData,
+        fileType,
+        time,
+      };
+
+      messages[fileMsg.id] = fileMsg;
+      if (!roomMessages[user.room]) roomMessages[user.room] = [];
+      roomMessages[user.room].push(fileMsg);
+
+      io.to(user.room).emit("fileShared", fileMsg);
+    }
+  });
+
+  // Audio message handler
+  socket.on("audioMessage", (audio) => {
+    const user = users[socket.id];
+    if (!user) return;
+
+    const audioMsg = {
+      id: crypto.randomUUID(),
       user: user.name,
-      fileName,
-      fileData,
-      fileType,
-      time,
+      fileName: audio.fileName,
+      fileData: audio.fileData,
+      fileType: audio.fileType,
+      time: getCurrentTime(),
     };
 
-    messages[fileMsg.id] = fileMsg; // ✅ Add this
+    messages[audioMsg.id] = audioMsg;
     if (!roomMessages[user.room]) roomMessages[user.room] = [];
-    roomMessages[user.room].push(fileMsg);
+    roomMessages[user.room].push(audioMsg);
 
-    io.to(user.room).emit("fileShared", fileMsg);
-  }
-});
+    io.to(user.room).emit("fileShared", audioMsg);
+  });
 
-socket.on("audioMessage", (audio) => {
-  const user = users[socket.id];
-  if (!user) return;
-
-  const audioMsg = {
-    id: crypto.randomUUID(), // ✅ Add this
-    user: user.name,
-    fileName: audio.fileName,
-    fileData: audio.fileData,
-    fileType: audio.fileType,
-    time: getCurrentTime(),
-  };
-
-  messages[audioMsg.id] = audioMsg; // ✅ Add this
-  if (!roomMessages[user.room]) roomMessages[user.room] = [];
-  roomMessages[user.room].push(audioMsg);
-
-  io.to(user.room).emit("fileShared", audioMsg);
-});
-
+  // Reactions (emojis)
   socket.on("addReaction", ({ messageId, emoji }) => {
     const user = users[socket.id];
     if (user) {
@@ -146,6 +162,7 @@ socket.on("audioMessage", (audio) => {
     }
   });
 
+  // Edit existing message
   socket.on("editMessage", ({ messageId, newText }) => {
     const user = users[socket.id];
     const msg = messages[messageId];
@@ -154,7 +171,7 @@ socket.on("audioMessage", (audio) => {
     if (msg.user === user.name) {
       msg.text = newText;
 
-      // Also update in roomMessages
+      // Update in roomMessages
       const room = user.room;
       if (roomMessages[room]) {
         const index = roomMessages[room].findIndex(m => m.id === messageId);
@@ -165,6 +182,7 @@ socket.on("audioMessage", (audio) => {
     }
   });
 
+  // Delete a message
   socket.on("deleteMessage", (messageId) => {
     const user = users[socket.id];
     const msg = messages[messageId];
@@ -173,7 +191,6 @@ socket.on("audioMessage", (audio) => {
     if (msg.user === user.name) {
       delete messages[messageId];
 
-      // Remove from roomMessages too
       const room = user.room;
       if (roomMessages[room]) {
         roomMessages[room] = roomMessages[room].filter(m => m.id !== messageId);
@@ -183,6 +200,7 @@ socket.on("audioMessage", (audio) => {
     }
   });
 
+  // Pin a message
   socket.on("pinMessage", (messageId) => {
     const user = users[socket.id];
     const msg = messages[messageId];
@@ -191,6 +209,7 @@ socket.on("audioMessage", (audio) => {
     io.to(user.room).emit("messagePinned", msg);
   });
 
+  // Handle user disconnect
   socket.on("disconnect", () => {
     const user = users[socket.id];
     if (user) {
@@ -214,6 +233,7 @@ socket.on("audioMessage", (audio) => {
   });
 });
 
+// Utility: Format a message object with timestamp
 function formatMessage(user, text) {
   const message = {
     id: crypto.randomUUID(),
@@ -225,6 +245,7 @@ function formatMessage(user, text) {
   return message;
 }
 
+// Utility: Get current time in HH:MM format (IST)
 function getCurrentTime() {
   return new Date().toLocaleTimeString("en-IN", {
     timeZone: "Asia/Kolkata",
@@ -234,6 +255,7 @@ function getCurrentTime() {
   });
 }
 
+// Start the server
 http.listen(PORT, () => {
   console.log(`✅ Server running at http://localhost:${PORT}`);
 });
