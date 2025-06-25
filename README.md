@@ -17,9 +17,8 @@ A simple yet powerful real-time chat application built with **Node.js**, **Socke
 - 🔍 Search messages
 - 🧹 Clear chat history (local)
 - ✅ Seen status indicators
-- 📱 Fully responsive UI
+- 📱 Fully responsive UI etc..
 
-etc..
 ---
 
 ## 📁 Folder Structure
