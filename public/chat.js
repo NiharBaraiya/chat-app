@@ -2,10 +2,12 @@
 
 const socket = io();
 
+//Get user name and room name from the URL
 const urlParams = new URLSearchParams(window.location.search);
 const name = urlParams.get("name");
 const room = urlParams.get("room");
 
+//  Get all required DOM elements
 const form = document.getElementById("chatForm");
 const input = document.getElementById("msg");
 const messages = document.getElementById("messages");
@@ -26,12 +28,12 @@ const emojiBtnSearch = document.getElementById("emoji-btn-search");
 let mediaRecorder;
 let audioChunks = [];
 let editingMessageId = null;
-
+// Join the chat room
 if (name && room) {
   socket.emit("joinRoom", { name, room });
   roomNameElem.innerText = `${room} Room`;
 }
-
+//Context menu with edit, delete, and pin options
 function handleContextMenu(li, messageId, currentText, fileType) {
   const menu = document.createElement("div");
   menu.className = "context-menu";
@@ -68,7 +70,7 @@ function handleContextMenu(li, messageId, currentText, fileType) {
     socket.emit("pinMessage", messageId);
   };
 }
-
+//Send or edit message on form submit
 form.addEventListener("submit", (e) => {
   e.preventDefault();
   const msgText = input.value.trim();
@@ -86,7 +88,7 @@ form.addEventListener("submit", (e) => {
   input.focus();
 });
 
-
+// Show context menu on right click of a message
 messages.addEventListener("contextmenu", (e) => {
   e.preventDefault();
   const li = e.target.closest("li.chat-message.sender");
@@ -97,7 +99,7 @@ messages.addEventListener("contextmenu", (e) => {
   if (!messageId) return;
   handleContextMenu(li, messageId, currentText, fileType);
 });
-
+//Observer to detect when message is seen
 const observer = new IntersectionObserver((entries) => {
   entries.forEach((entry) => {
     if (entry.isIntersecting) {
@@ -111,7 +113,7 @@ const observer = new IntersectionObserver((entries) => {
     }
   });
 }, { threshold: 1.0 });
-
+// render message type 
 function renderMessage(msg, fromHistory = false) {
   const li = document.createElement("li");
   li.classList.add("chat-message");
@@ -170,11 +172,14 @@ function renderMessage(msg, fromHistory = false) {
   if (!fromHistory) messages.scrollTop = messages.scrollHeight;
 }
 
+// message History 
 socket.on("message", (msg) => renderMessage(msg));
 socket.on("messageHistory", (history) => {
   history.forEach((msg) => renderMessage(msg, true));
   messages.scrollTop = messages.scrollHeight;
 });
+
+//messageSeen 
 socket.on("messageSeen", (messageId) => {
   const span = document.getElementById(`seen-${messageId}`);
   if (span) {
@@ -184,6 +189,7 @@ socket.on("messageSeen", (messageId) => {
     span.title = "Seen";
   }
 });
+//messageEdited
 socket.on("messageEdited", ({ messageId, newText }) => {
   const msgElem = document.getElementById(messageId);
   if (!msgElem) return;
@@ -195,12 +201,12 @@ socket.on("messageEdited", ({ messageId, newText }) => {
 
   msgElem.dataset.text = newText.toLowerCase();
 });
-
+//messageDeleted
 socket.on("messageDeleted", (messageId) => {
   const msgElem = document.getElementById(messageId);
   if (msgElem) msgElem.remove();
 });
-
+//messagePinned
 socket.on("messagePinned", (msg) => {
   const originalMsg = document.getElementById(msg.id);
   if (originalMsg && !originalMsg.classList.contains("pinned-highlight")) {
@@ -211,7 +217,7 @@ socket.on("messagePinned", (msg) => {
     originalMsg.classList.add("pinned-highlight");
   }
 });
-
+// user typing.....
 let typingTimeout;
 input.addEventListener("input", () => {
   socket.emit("typing", true);
@@ -235,7 +241,7 @@ socket.on("roomUsers", ({ users }) => {
     userList.appendChild(li);
   });
 });
-
+// for upload file 
 fileInput?.addEventListener("change", () => {
   const file = fileInput.files[0];
   if (!file) return;
@@ -284,7 +290,7 @@ searchButton.addEventListener("click", () => {
   if (!found) alert(`❌ No message found containing: "${keyword}"`);
 });
 
-
+// for audio
 recordAudioBtn.addEventListener("click", async () => {
   if (!navigator.mediaDevices) return alert("Audio not supported.");
   const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -364,7 +370,7 @@ const emojiList = [
   "🪑", "🛏️", "🪞", "🧴", "🧯", "🧼", "🪒", "💳", "🧾", "🪪",
   "🔐"
 ];
-
+// render emoji 
 function renderEmojiPanel(targetInput) {
   emojiPanel.innerHTML = "";
   emojiList.forEach((emoji) => {
