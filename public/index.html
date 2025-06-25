@@ -5,6 +5,7 @@
   <title>Simple Chat (Localhost)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="style.css" />
+    /* Styling for context menu, pinned message, emoji panel, search bar, etc. */
   <style>
     .context-menu {
       position: absolute;
@@ -70,15 +71,19 @@
   </style>
 </head>
 <body>
+  <!-- Chat UI layout -->
   <div class="main-container" style="width:1280px;">
     <div class="chat-container">
       <h2>💬 Real Time Chat Application</h2>
+ <!-- Search bar for messages -->
       <div class="search-bar">
         <input type="text" id="searchInput" placeholder="Search messages...">
         <button id="searchBtn">🔍</button>
       </div>
+           <!-- Message list -->
       <ul id="messages"></ul>
       <p id="typing"></p>
+        <!-- Chat form for input -->
       <form id="chatForm" class="chat-container">
         <div class="input-bar">
           <div class="input-group">
@@ -96,13 +101,13 @@
       </form>
     </div>
   </div>
-
+<!-- Right-click context menu -->
   <div class="context-menu" id="contextMenu">
     <button id="editBtn">✏️ Edit</button>
     <button id="deleteBtn">🗑️ Delete</button>
     <button id="pinBtn">📌 Pin</button>
   </div>
-
+ <!-- Pinned message area -->
   <div id="pinned-message" style="display: none;"></div>
 
   <script src="/socket.io/socket.io.js"></script>
@@ -110,7 +115,7 @@
     const socket = io();
     const name = prompt("Enter your name:")?.trim() || "Anonymous";
     socket.emit("joinRoom", { name, room: "localhost" });
-
+    // Select important DOM elements
     const form = document.getElementById("chatForm");
     const input = document.getElementById("msg");
     const messages = document.getElementById("messages");
@@ -130,7 +135,7 @@
     let audioChunks = [];
     let isRecording = false;
     let stopTimeout;
-
+ // Emoji list rendering
     const emojiList = [
   // 🔝 1. Top Most Used
   "😂", "🤣", "❤️", "😍", "😊", "👍", "🙏", "🔥", "🥰", "😭",
@@ -215,7 +220,7 @@
         input.focus();
       }
     });
-
+// Record audio and send
     recordBtn.onclick = async () => {
       if (!navigator.mediaDevices) return alert("Audio not supported");
 
@@ -255,7 +260,7 @@
         if (mediaRecorder.state === "recording") mediaRecorder.stop();
       }
     };
-
+ // Display audio message
     socket.on("fileShared", (data) => {
       const li = document.createElement("li");
       li.classList.add("chat-message");
@@ -279,6 +284,7 @@
       messages.scrollTop = messages.scrollHeight;
     });
 
+    // Display text message
     socket.on("message", (message) => {
       const li = document.createElement("li");
       const isSender = message.user === name;
@@ -310,11 +316,12 @@
       messages.scrollTop = messages.scrollHeight;
     });
 
+  // Mark as seen
     socket.on("messageSeen", (messageId) => {
       const seenSpan = document.getElementById(`seen-${messageId}`);
       if (seenSpan) seenSpan.innerText = "[✓✓";
     });
-
+ // Search messages
     searchBtn.addEventListener("click", () => {
       const term = searchInput.value.trim().toLowerCase();
       if (!term) return;
@@ -328,17 +335,18 @@
         alert("No message found.");
       }
     });
-
+   // Clear chat
     clearButton.addEventListener("click", () => {
       messages.innerHTML = "";
     });
 
+    // Show right-click menu
     function showContextMenu(x, y) {
       contextMenu.style.left = `${x}px`;
       contextMenu.style.top = `${y}px`;
       contextMenu.style.display = "block";
     }
-
+  // Edit selected message
     document.getElementById("editBtn").onclick = () => {
       if (selectedMessage) {
         const currentText = selectedMessage.querySelector(".text").innerText;
@@ -350,14 +358,14 @@
         contextMenu.style.display = "none";
       }
     };
-
+ // Delete selected message
     document.getElementById("deleteBtn").onclick = () => {
       if (selectedMessage) {
         selectedMessage.remove();
         contextMenu.style.display = "none";
       }
     };
-
+ // pin  selected message
     document.getElementById("pinBtn").onclick = () => {
       if (selectedMessage) {
         const pinnedText = selectedMessage.querySelector(".msg-header").innerText;
@@ -366,7 +374,7 @@
         contextMenu.style.display = "none";
       }
     };
-
+    // Typing indicator logic
     let typingTimeout;
     input.addEventListener("input", () => {
       socket.emit("typing", true);
@@ -375,7 +383,7 @@
         socket.emit("typing", false);
       }, 60000);
     });
-
+// Display typing text
     socket.on("typing", (text) => {
       typing.innerText = text || "";
     });
