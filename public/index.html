@@ -45,10 +45,27 @@
       margin: 5px;
       cursor: pointer;
     }
-    img.uploaded-img {
-      max-width: 200px;
-      margin-top: 5px;
-      border-radius: 5px;
+    .timestamp {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .seen-status {
+      font-size: 12px;
+      color: white;
+      margin-left: 10px;
+    }
+    .search-bar {
+      display: flex;
+      justify-content: end;
+      margin-bottom: 10px;
+    }
+    .search-bar input {
+      padding: 5px;
+      width: 200px;
+    }
+    .search-bar button {
+      margin-left: 5px;
     }
   </style>
 </head>
@@ -56,18 +73,21 @@
   <div class="main-container" style="width:1280px;">
     <div class="chat-container">
       <h2>💬 Real Time Chat Application</h2>
+      <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="Search messages...">
+        <button id="searchBtn">🔍</button>
+      </div>
       <ul id="messages"></ul>
       <p id="typing"></p>
-
       <form id="chatForm" class="chat-container">
         <div class="input-bar">
           <div class="input-group">
             <button type="button" id="toggleEmoji" title="Emoji">😀</button>
             <input id="msg" type="text" placeholder="Type a message..." autocomplete="off" required />
             <label class="file-upload" title="Upload File">
-              📁
-              <input type="file" id="fileInput" hidden />
+              📁<input type="file" id="fileInput" hidden />
             </label>
+            <button type="button" id="recordBtn" title="Record Voice">🎤</button>
           </div>
           <button type="submit" title="Send">📤</button>
           <button type="button" id="clearChat" title="Clear Chat">🧹 Clear</button>
@@ -89,6 +109,8 @@
   <script>
     const socket = io();
     const name = prompt("Enter your name:")?.trim() || "Anonymous";
+    socket.emit("joinRoom", { name, room: "localhost" });
+
     const form = document.getElementById("chatForm");
     const input = document.getElementById("msg");
     const messages = document.getElementById("messages");
@@ -99,17 +121,69 @@
     const emojiPanel = document.getElementById("emojiPanel");
     const pinnedMessage = document.getElementById("pinned-message");
     const contextMenu = document.getElementById("contextMenu");
+    const searchBtn = document.getElementById("searchBtn");
+    const searchInput = document.getElementById("searchInput");
+    const recordBtn = document.getElementById("recordBtn");
 
     let selectedMessage = null;
+    let mediaRecorder;
+    let audioChunks = [];
+    let isRecording = false;
+    let stopTimeout;
 
-  const emojiList = [
-  "😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃","😉","😌","😍","😘","😗",
-  "😙","😚","😋","😛","😜","🤪","😝","🤑","🤗","🤭","🤫","🤔","🤐","🤨","😐","😑","😶",
-  "😏","😒","🙄","😬","🤥","😌","😔","😪","🤤","😴","😷","🤒","🤕","🤢","🤮","🤧","🥵",
-  "🥶","🥴","😵","🤯","🤠","🥳","😎","🤓","🧐","😕","😟","🙁","☹️","😮","😯","😲","😳",
-  "🥺","😦","😧","😨","😰","😥","😢","😭","😱","😖","😣","😞","😓","😩","😫","🥱","😤",
-  "😡","😠","🤬","😈","👿"
+    const emojiList = [
+  // 🔝 1. Top Most Used
+  "😂", "🤣", "❤️", "😍", "😊", "👍", "🙏", "🔥", "🥰", "😭",
+  "😅", "😘", "😎", "😉", "👏", "🥳", "🙌", "💯", "😢", "😡",
+  "💖", "💜", "🫶", "🤝", "👋", "👌", "💔", "🎉", "🎂", "🎁",
+  "✨", "🌟", "💡", "🎶", "🎵", "🎮", "📱", "💻", "🍕", "🍔",
+  "😇", "😋", "🥹", "🤩", "🤗", "😤", "💬", "📸", "🚩",
+
+  // 😀 2. Smileys & Emotions
+  "😀", "😃", "😄", "😁", "😆", "🙂", "🙃", "😛", "😜", "🤪",
+  "😝", "🤭", "🤫", "🤔", "😏", "🤨", "😐", "😑", "😶", "😒",
+  "🙄", "😬", "😔", "😪", "😴", "🥱", "😥", "😓", "😞", "😣",
+  "😖", "😫", "😩", "😠", "🤬", "☹️", "😷", "🤒", "🤕", "🤢",
+  "🤮", "🤧", "🥵", "🥶", "🥴", "🤯", "😵", "😰", "😨", "😧",
+  "😦", "😱", "😳", "😲", "😯", "😮", "😟", "🙁", "😕", "😌",
+  "🤤", "🤑",
+
+  // 😈 3. Mischievous / Faces
+  "😈", "👿", "🤥", "🤓", "🧐", "🤠", "🤐", "😺", "😸", "😹",
+  "😻", "😽", "😼", "🙀", "😿", "🫣", "🫠", "🫥", "🫡",
+
+  // 💡 4. UI / Reactions / Symbols
+  "💪", "✌️", "💤", "💎", "⚡", "📌", "🛎️", "🔔", "🔕", "⏰",
+  "📣", "🔊", "🔇", "📚", "📖", "✏️", "📝", "📦", "🧭", "🆗",
+  "✅", "❌", "❓", "❗", "✔️", "♻️", "⚠️", "🔁", "🔂", "🔄",
+  "🔃", "⛔", "🚫", "🔞", "➕", "➖", "➗", "✖️", "〽️", "💢",
+  "📍", "🛑", "🆘", "🈲",
+
+  // 🐾 5. Animals & Nature
+  "🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐨", "🐯",
+  "🦁", "🐮", "🐷", "🐸", "🐵", "🦄", "🐔", "🐧", "🦋", "🌞",
+  "🌝", "🌚", "🌈", "🌧️", "🌪️", "❄️", "💧", "☀️", "🌕",
+
+  // 🍽 6. Food & Drink
+  "🍟", "🌭", "🍿", "🥓", "🍗", "🍖", "🥪", "🍝", "🥗", "🍤",
+  "🍩", "🍪", "🍰", "🧁", "🍫", "🍭", "🍬", "🍎", "🍊", "🍌",
+  "🍉", "🍓", "🍇", "🍍", "🥥", "🥭", "🥝", "🧃",
+
+  // ☕ 7. Drinks & Party
+  "🥤", "🧋", "🍺", "🍻", "🍷", "🥂", "🍹", "🍾", "🍵", "☕",
+  "🥃", "🧉", "🍶", "🍸", "🍽️",
+
+  // 🗺️ 8. Activity, Travel & Places
+  "🎧", "🎤", "🎬", "🎨", "🎯", "🎳", "🏀", "⚽", "🏈", "🏓",
+  "🏸", "🎲", "🚗", "🚕", "🚌", "🚎", "🚓", "✈️", "🚀", "🛫",
+  "🛬", "🚢", "🏝️", "🏖️", "⛺", "🗺️", "🗽",
+
+  // 📦 9. Objects
+  "📷", "📞", "🔋", "🔌", "🔦", "🔑", "🗝️", "🪙", "🧱", "🪵",
+  "🪑", "🛏️", "🪞", "🧴", "🧯", "🧼", "🪒", "💳", "🧾", "🪪",
+  "🔐"
 ];
+
     emojiList.forEach(e => {
       const span = document.createElement("span");
       span.textContent = e;
@@ -125,79 +199,138 @@
     };
 
     document.addEventListener("click", (e) => {
-      if (!emojiPanel.contains(e.target) && e.target !== emojiBtn) {
-        emojiPanel.style.display = "none";
-      }
+      if (!emojiPanel.contains(e.target) && e.target !== emojiBtn) emojiPanel.style.display = "none";
       if (!contextMenu.contains(e.target)) {
         contextMenu.style.display = "none";
         selectedMessage = null;
       }
     });
 
-    form.addEventListener("submit", function (e) {
+    form.addEventListener("submit", (e) => {
       e.preventDefault();
       const msg = input.value.trim();
       if (msg) {
-        socket.emit("chatMessage", msg);
+        socket.emit("chatMessage", { text: msg });
         input.value = "";
         input.focus();
       }
     });
 
+    recordBtn.onclick = async () => {
+      if (!navigator.mediaDevices) return alert("Audio not supported");
+
+      if (!isRecording) {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.start();
+        audioChunks = [];
+        isRecording = true;
+        recordBtn.textContent = "⏹️ Stop";
+
+        mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+
+        mediaRecorder.onstop = () => {
+          isRecording = false;
+          const blob = new Blob(audioChunks, { type: "audio/webm" });
+          const reader = new FileReader();
+
+          reader.onloadend = () => {
+            socket.emit("audioMessage", {
+              fileData: reader.result,
+              fileName: `voice-${Date.now()}.webm`,
+              fileType: "audio/webm",
+            });
+          };
+
+          reader.readAsDataURL(blob);
+          recordBtn.textContent = "🎤 Record";
+          clearTimeout(stopTimeout);
+        };
+
+        stopTimeout = setTimeout(() => {
+          if (mediaRecorder.state === "recording") mediaRecorder.stop();
+        }, 15000);
+
+      } else {
+        if (mediaRecorder.state === "recording") mediaRecorder.stop();
+      }
+    };
+
+    socket.on("fileShared", (data) => {
+      const li = document.createElement("li");
+      li.classList.add("chat-message");
+      const isSender = data.user === name;
+      li.innerHTML = `<strong>${isSender ? "You" : data.user}</strong> 🎧 Voice:<br>`;
+
+      const audio = document.createElement("audio");
+      audio.src = data.fileData;
+      audio.controls = true;
+      audio.onloadedmetadata = () => {
+        audio.currentTime = 0;
+      };
+      li.appendChild(audio);
+
+      const time = document.createElement("div");
+      time.className = "timestamp";
+      time.textContent = data.time || "";
+      li.appendChild(time);
+
+      messages.appendChild(li);
+      messages.scrollTop = messages.scrollHeight;
+    });
+
     socket.on("message", (message) => {
       const li = document.createElement("li");
-      li.classList.add("chat-message", message.user === name ? "sender" : "receiver");
-      li.innerHTML = `<div class="msg-header"><span class="user">${message.user}</span>: <span class="text">${message.text}</span></div>
-                      <div class="timestamp">${message.time}</div>`;
-      li.dataset.user = message.user;
-      li.dataset.text = message.text;
+      const isSender = message.user === name;
+      li.classList.add("chat-message", isSender ? "sender" : "receiver");
+      li.dataset.messageId = message.id;
+      li.dataset.rawtext = message.text.toLowerCase();
 
-      if (message.user === name) {
+      li.innerHTML = `
+        <div class="msg-header">
+          <span class="user">${message.user}</span>: 
+          <span class="text">${message.text}</span>
+        </div>
+        <div class="timestamp">
+          ${message.time}
+          ${isSender ? `<span class="seen-status" id="seen-${message.id}">[✓</span>` : ""}
+        </div>`;
+
+      if (isSender) {
         li.addEventListener("contextmenu", (e) => {
           e.preventDefault();
           selectedMessage = li;
           showContextMenu(e.pageX, e.pageY);
         });
+      } else {
+        socket.emit("seenMessage", message.id);
       }
 
       messages.appendChild(li);
       messages.scrollTop = messages.scrollHeight;
     });
 
-   socket.on("fileMessage", (message) => {
-  const li = document.createElement("li");
-  li.classList.add("chat-message", message.user === name ? "sender" : "receiver");
+    socket.on("messageSeen", (messageId) => {
+      const seenSpan = document.getElementById(`seen-${messageId}`);
+      if (seenSpan) seenSpan.innerText = "[✓✓";
+    });
 
-  const isImage = message.fileName.match(/\.(jpeg|jpg|gif|png|webp)$/i);
+    searchBtn.addEventListener("click", () => {
+      const term = searchInput.value.trim().toLowerCase();
+      if (!term) return;
+      const allMessages = [...document.querySelectorAll("li.chat-message")];
+      const found = allMessages.find(msg => msg.dataset.rawtext?.includes(term));
+      if (found) {
+        found.scrollIntoView({ behavior: "smooth", block: "center" });
+        found.style.backgroundColor = "#ffff99";
+        setTimeout(() => (found.style.backgroundColor = ""), 2000);
+      } else {
+        alert("No message found.");
+      }
+    });
 
-  let content = `<div class="msg-header"><span class="user">${message.user}</span>: <br>`;
-
-  if (isImage) {
-    content += `<img src="${message.fileData}" class="uploaded-img" alt="${message.fileName}" /><br>`;
-  }
-
-  // Always add the download link
-  content += `<a href="${message.fileData}" download="${message.fileName}" target="_blank" class="download-link">⬇️  ${message.fileName}</a>`;
-  content += `</div><div class="timestamp">${message.time}</div>`;
-
-  li.innerHTML = content;
-  messages.appendChild(li);
-  messages.scrollTop = messages.scrollHeight;
-});
-
-    fileInput.addEventListener("change", () => {
-      const file = fileInput.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        socket.emit("fileUpload", {
-          name,
-          fileName: file.name,
-          fileData: e.target.result
-        });
-      };
-      reader.readAsDataURL(file);
+    clearButton.addEventListener("click", () => {
+      messages.innerHTML = "";
     });
 
     function showContextMenu(x, y) {
@@ -212,7 +345,7 @@
         const newText = prompt("Edit your message:", currentText);
         if (newText !== null) {
           selectedMessage.querySelector(".text").innerText = newText;
-          selectedMessage.dataset.text = newText;
+          selectedMessage.dataset.rawtext = newText.toLowerCase();
         }
         contextMenu.style.display = "none";
       }
@@ -240,18 +373,12 @@
       clearTimeout(typingTimeout);
       typingTimeout = setTimeout(() => {
         socket.emit("typing", false);
-      }, 3000);
+      }, 60000);
     });
 
     socket.on("typing", (text) => {
       typing.innerText = text || "";
     });
-
-    clearButton.addEventListener("click", () => {
-      messages.innerHTML = "";
-    });
-
-    socket.emit("joinRoom", { name, room: "localhost" });
   </script>
 </body>
 </html>
